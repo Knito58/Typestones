@@ -16,28 +16,26 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.TreeMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
 
-import de.knito.typestones.block.FontFace;
 import de.knito.typestones.glyph.GlyphSet;
+import de.knito.typestones.letter.Letter;
 
 /**
- * Turns font faces into glyph textures: one 16x16 PNG per character of {@link GlyphSet}, white ink on
- * a transparent background, so the block can tint it with any dye color.
+ * Turns font faces into letters: one 16x16 square of ink pixels per character of {@link GlyphSet},
+ * written as {@code typestones/letters/<face>.txt} into the mod's resources, where the class Letters reads it.
  *
  * <p>A face is either a dot-matrix text file (fonts/classic.txt) or any TrueType/OpenType font file.
  * Every font file in the fonts folder becomes a face named after the file. A font from elsewhere,
  * e.g. one installed on the computer, is given with its path and a face name.
  *
- * <p>For faces that are a block ({@link FontFace}) it also writes the block's JSON files, see
- * {@link BlockAssets}.
- *
  * <p>Arguments: {@code <resources dir> <preview dir> <fonts dir> [<font file> <face name>]}.
- * With {@code -Dglyphgen.check=true} nothing is written; it fails when a texture is missing or differs.
+ * With {@code -Dglyphgen.check=true} nothing is written; it fails when a letter file is missing or differs.
  */
 public final class GlyphGen {
 	static final int SIZE = 16;
@@ -54,10 +52,9 @@ public final class GlyphGen {
 			System.err.println("Arguments: <resources dir> <preview dir> <fonts dir> [<font file> <face name>]");
 			System.exit(2);
 		}
-		Path resources = Path.of(args[0]);
-		Path textures = resources.resolve("assets/typestones/textures/block/glyph");
+		Path letters = Path.of(args[0]).resolve("typestones/letters");
 		Path previews = Path.of(args[1]);
-		Map<String, Map<Character, BufferedImage>> faces = new HashMap<>();
+		Map<String, Map<Character, BufferedImage>> faces = new TreeMap<>();
 		if (args.length == 5) {
 			String face = checkFaceName(args[4]);
 			faces.put(face, fromFont(Path.of(args[3])));
@@ -74,82 +71,62 @@ public final class GlyphGen {
 				}
 			}
 		}
-		Map<String, String> json = new LinkedHashMap<>();
-		for (FontFace face : FontFace.values()) {
-			if (!faces.containsKey(face.folder)) {
-				throw new IllegalArgumentException("Block face " + face.folder + " has no font file in the fonts folder");
-			}
-			json.putAll(BlockAssets.of(face));
+		if (!faces.containsKey("classic")) {
+			throw new IllegalArgumentException("The built-in face classic has no font file in the fonts folder");
+		}
+		Map<Path, String> files = new LinkedHashMap<>();
+		for (var face : faces.entrySet()) {
+			files.put(letters.resolve(face.getKey() + ".txt"), letterFile(face.getKey(), face.getValue()));
 		}
 		if (Boolean.getBoolean("glyphgen.check")) {
-			check(textures, faces, resources, json);
+			check(files);
 			return;
 		}
-		for (var file : json.entrySet()) {
-			Path path = resources.resolve(file.getKey());
-			Files.createDirectories(path.getParent());
-			Files.writeString(path, file.getValue(), StandardCharsets.UTF_8);
+		for (var file : files.entrySet()) {
+			Files.createDirectories(file.getKey().getParent());
+			Files.writeString(file.getKey(), file.getValue(), StandardCharsets.UTF_8);
 		}
 		for (var face : faces.entrySet()) {
-			Path dir = textures.resolve(face.getKey());
-			Files.createDirectories(dir);
-			for (var glyph : face.getValue().entrySet()) {
-				ImageIO.write(glyph.getValue(), "png", dir.resolve(GlyphSet.textureName(glyph.getKey()) + ".png").toFile());
-			}
 			Files.createDirectories(previews);
 			ImageIO.write(preview(face.getValue()), "png", previews.resolve(face.getKey() + ".png").toFile());
-			System.out.println("Face " + face.getKey() + ": " + face.getValue().size() + " glyphs in " + dir);
+			System.out.println("Face " + face.getKey() + ": " + face.getValue().size() + " letters, preview in " + previews);
 		}
-		System.out.println(json.size() + " JSON files for the blocks of " + FontFace.values().length + " faces");
 	}
 
-	/** Compares pixels, not file bytes, since PNG files from different Java versions may differ. */
-	private static void check(Path textures, Map<String, Map<Character, BufferedImage>> faces, Path resources,
-			Map<String, String> json) throws IOException {
-		List<String> problems = new ArrayList<>();
-		for (var file : json.entrySet()) {
-			Path path = resources.resolve(file.getKey());
-			if (!Files.exists(path)) {
-				problems.add("missing " + path);
-			} else if (!Files.readString(path, StandardCharsets.UTF_8).equals(file.getValue())) {
-				problems.add("differs " + path);
-			}
-		}
-		for (var face : faces.entrySet()) {
-			for (var glyph : face.getValue().entrySet()) {
-				Path file = textures.resolve(face.getKey()).resolve(GlyphSet.textureName(glyph.getKey()) + ".png");
-				if (!Files.exists(file)) {
-					problems.add("missing " + file);
-				} else if (!samePixels(ImageIO.read(file.toFile()), glyph.getValue())) {
-					problems.add("differs " + file);
+	/** One line "U+0041 16 <hex>" per letter, in the order of the set; see {@link Letter#fromHex}. */
+	private static String letterFile(String face, Map<Character, BufferedImage> glyphs) {
+		StringBuilder out = new StringBuilder("# Letters of the face " + face + ", written by GlyphGen. Do not edit.\n");
+		for (char c : inked()) {
+			BufferedImage image = glyphs.get(c);
+			boolean[] ink = new boolean[SIZE * SIZE];
+			for (int y = 0; y < SIZE; y++) {
+				for (int x = 0; x < SIZE; x++) {
+					ink[y * SIZE + x] = (image.getRGB(x, y) >>> 24) >= 128;
 				}
+			}
+			out.append(String.format("U+%04X %d %s\n", (int) c, SIZE, Letter.of(SIZE, ink).toHex()));
+		}
+		return out.toString();
+	}
+
+	private static void check(Map<Path, String> files) throws IOException {
+		List<String> problems = new ArrayList<>();
+		for (var file : files.entrySet()) {
+			if (!Files.exists(file.getKey())) {
+				problems.add("missing " + file.getKey());
+			} else if (!Files.readString(file.getKey(), StandardCharsets.UTF_8).equals(file.getValue())) {
+				problems.add("differs " + file.getKey());
 			}
 		}
 		if (!problems.isEmpty()) {
 			problems.forEach(System.err::println);
-			System.err.println("Glyph textures or block files are out of date: run ./gradlew generateGlyphs and commit them.");
+			System.err.println("Letter files are out of date: run ./gradlew generateGlyphs and commit them.");
 			System.exit(1);
 		}
-		System.out.println("Glyph textures and block files are up to date.");
+		System.out.println("Letter files are up to date.");
 	}
 
-	private static boolean samePixels(BufferedImage a, BufferedImage b) {
-		if (a.getWidth() != b.getWidth() || a.getHeight() != b.getHeight()) {
-			return false;
-		}
-		for (int y = 0; y < a.getHeight(); y++) {
-			for (int x = 0; x < a.getWidth(); x++) {
-				int pa = a.getRGB(x, y), pb = b.getRGB(x, y);
-				// Fully transparent pixels are equal whatever color they hold.
-				if (pa != pb && ((pa | pb) >>> 24) != 0) {
-					return false;
-				}
-			}
-		}
-		return true;
-	}
-
-	/** Face names become texture folders and later block names, so they must be valid resource paths. */
+	/** Face names become file names in the resources, so they must be valid resource paths. */
 	private static String checkFaceName(String face) {
 		if (!face.matches("[a-z0-9_]+")) {
 			throw new IllegalArgumentException("Face name \"" + face + "\" may only use a-z, 0-9 and _");

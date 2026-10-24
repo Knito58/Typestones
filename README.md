@@ -15,22 +15,25 @@ Work in progress. Planned for the first version:
 
 ## Font faces
 
-Glyph textures are generated, not drawn by hand. Each face in `fonts/` becomes a folder of 16×16
-textures (white ink on transparent; the block tints it with the dye color):
+Letters are generated, not drawn by hand. Each face in `fonts/` becomes a file of 16×16 ink
+pixels, `src/main/resources/typestones/letters/<face>.txt`. The game draws each letter as a few flat
+rectangles in the letter dye, so no textures are needed. A stone stores only a hash of its letter's
+pixels.
 
-- `fonts/classic.txt`: Billboard Engine's 5×7 dot-matrix font, as editable text (`#` = ink).
+- `fonts/classic.txt`: Billboard Engine's 5×7 dot-matrix font, as editable text (`#` = ink). This is
+  the face the game uses for now.
 - Any `.ttf` or `.otf` file put into `fonts/` becomes a face named after the file. The font must
   have every character of the set, otherwise the generator lists the missing ones and stops.
 
-After changing a face, run `./gradlew generateGlyphs` and commit the textures. A preview sheet of each
-face lands in `build/glyph-preview/`. To try a font installed on the computer without copying it:
+After changing a face, run `./gradlew generateGlyphs` and commit the letter files. A preview sheet of
+each face lands in `build/glyph-preview/`. To try a font installed on the computer without copying it:
 
 ```
 ./gradlew generateGlyphs -Pfont=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf -Pface=dejavu_bold
 ```
 
-Check the font's license before committing it or its glyphs. `./gradlew build` fails when the committed
-textures no longer match `fonts/`.
+Check the font's license before committing it or its letters. `./gradlew build` fails when the
+committed letter files no longer match `fonts/`.
 
 ## Building and testing (Linux)
 

@@ -64,7 +64,7 @@ def glyphArgs = [
 
 tasks.register('generateGlyphs', JavaExec) {
 	group = 'typestones'
-	description = 'Draws the glyph textures of the font faces in fonts/ (or of -Pfont=<file> -Pface=<name>).'
+	description = 'Writes the letter files of the font faces in fonts/ (or of -Pfont=<file> -Pface=<name>).'
 	classpath = sourceSets.glyphgen.runtimeClasspath
 	mainClass = 'de.knito.typestones.glyphgen.GlyphGen'
 	jvmArgs '-Djava.awt.headless=true'
@@ -72,10 +72,10 @@ tasks.register('generateGlyphs', JavaExec) {
 	args glyphArgs + (font.present ? [font.get(), providers.gradleProperty('face').getOrElse('custom')] : [])
 }
 
-// Part of "build": fails when the committed glyph textures or block files don't match the generator.
+// Part of "build": fails when the committed letter files don't match the generator.
 def checkGlyphs = tasks.register('checkGlyphs', JavaExec) {
 	group = 'verification'
-	description = 'Checks that the glyph textures are up to date.'
+	description = 'Checks that the letter files are up to date.'
 	classpath = sourceSets.glyphgen.runtimeClasspath
 	mainClass = 'de.knito.typestones.glyphgen.GlyphGen'
 	jvmArgs '-Djava.awt.headless=true', '-Dglyphgen.check=true'

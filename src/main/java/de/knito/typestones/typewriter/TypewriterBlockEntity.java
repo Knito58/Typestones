@@ -37,9 +37,8 @@ import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 import de.knito.typestones.ModBlocks;
 import de.knito.typestones.ModTypewriter;
 import de.knito.typestones.block.Dyes;
-import de.knito.typestones.block.FontFace;
 import de.knito.typestones.block.TypestoneItem;
-import de.knito.typestones.glyph.GlyphSet;
+import de.knito.typestones.letter.Letters;
 
 /**
  * Makes one Typestone per character of a line of text, every {@link #INTERVAL} ticks. Takes smooth
@@ -109,7 +108,7 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 	public static String cleanText(String text) {
 		StringBuilder clean = new StringBuilder();
 		for (char c : text.toCharArray()) {
-			if (GlyphSet.indexOf(c) >= 0 && clean.length() < MAX_TEXT_LENGTH) {
+			if (Letters.hasClassic(c) && clean.length() < MAX_TEXT_LENGTH) {
 				clean.append(c);
 			}
 		}
@@ -194,20 +193,20 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 		}
 
 		char c = jobText.charAt(made % jobText.length());
-		int glyph = GlyphSet.indexOf(c);
+		String glyph = Letters.classic(c);
 		Optional<DyeColor> letter = dyeOf(dyeSamples.getItem(SLOT_LETTER));
 		Optional<DyeColor> background = dyeOf(dyeSamples.getItem(SLOT_BACKGROUND));
-		if (glyph != 0 && letter.isEmpty()) {
+		if (c != ' ' && letter.isEmpty()) {
 			return TypewriterStatus.NO_LETTER_DYE;
 		}
 		Dyes dyes = new Dyes(letter.orElse(DyeColor.BLACK), background);
-		TypestoneItem item = ModBlocks.TYPESTONE_ITEMS.get(FontFace.CLASSIC);
+		TypestoneItem item = ModBlocks.TYPESTONE_ITEM;
 
 		try (Transaction transaction = Transaction.openOuter()) {
 			if (missing(inputs, Items.SMOOTH_STONE, transaction)) {
 				return TypewriterStatus.NEEDS_STONE;
 			}
-			if (glyph != 0 && missing(inputs, dyeItem(letter.get()), transaction)) {
+			if (c != ' ' && missing(inputs, dyeItem(letter.get()), transaction)) {
 				return TypewriterStatus.NEEDS_LETTER_DYE;
 			}
 			if (background.isPresent() && missing(inputs, dyeItem(background.get()), transaction)) {
