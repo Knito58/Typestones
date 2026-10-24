@@ -2,7 +2,6 @@ package de.knito.typestones.client.network;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -13,7 +12,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.SectionPos;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
@@ -106,24 +106,26 @@ public final class LetterSync {
 		redraw(letters.stream().map(LibraryLetter::hash).toList());
 	}
 
-	/** Redraws the stones that waited for these letters. Main thread only. */
+	/**
+	 * Redraws the stones that waited for these letters. Main thread only. Goes through the same path as a
+	 * changed block, which renderers like Sodium follow too, and asks for an immediate rebuild.
+	 */
 	private static void redraw(List<String> hashes) {
 		ClientLevel level = Minecraft.getInstance().level;
 		if (level == null) {
 			return;
 		}
-		Set<Long> sections = new HashSet<>();
+		int stones = 0;
 		for (String hash : hashes) {
 			Set<BlockPos> positions = WAITING.remove(hash);
 			if (positions != null) {
 				for (BlockPos pos : positions) {
-					sections.add(SectionPos.asLong(pos));
+					BlockState state = level.getBlockState(pos);
+					level.sendBlockUpdated(pos, state, state, Block.UPDATE_IMMEDIATE);
+					stones++;
 				}
 			}
 		}
-		Typestones.LOGGER.info("Redrawing {} sections for {} letters", sections.size(), hashes.size());
-		for (long section : sections) {
-			level.setSectionDirtyWithNeighbors(SectionPos.x(section), SectionPos.y(section), SectionPos.z(section));
-		}
+		Typestones.LOGGER.info("Redrawing {} stones for {} letters", stones, hashes.size());
 	}
 }
