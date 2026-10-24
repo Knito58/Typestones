@@ -46,6 +46,9 @@ public class TypestoneDropTest {
 		String lootInfo = " | loot table " + key + (table == net.minecraft.world.level.storage.loot.LootTable.EMPTY ? " is EMPTY" : " loaded: "
 				+ net.minecraft.world.level.storage.loot.LootTable.DIRECT_CODEC.encodeStart(
 						helper.getLevel().registryAccess().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE), table))
+				+ " | vanilla bee_nest: " + net.minecraft.world.level.storage.loot.LootTable.DIRECT_CODEC.encodeStart(
+						helper.getLevel().registryAccess().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE),
+						helper.getLevel().getServer().reloadableRegistries().getLootTable(net.minecraft.world.level.block.Blocks.BEE_NEST.getLootTable().orElseThrow()))
 				+ " | direct drops " + net.minecraft.world.level.block.Block.getDrops(state, helper.getLevel(), absolute, helper.getLevel().getBlockEntity(absolute))
 				.stream().map(s -> s + " " + s.getComponentsPatch()).toList();
 
