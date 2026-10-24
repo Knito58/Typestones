@@ -1,4 +1,4 @@
-package de.knito.typestones.station;
+package de.knito.typestones.typewriter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +35,7 @@ import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 
 import de.knito.typestones.ModBlocks;
-import de.knito.typestones.ModStation;
+import de.knito.typestones.ModTypewriter;
 import de.knito.typestones.block.Dyes;
 import de.knito.typestones.block.FontFace;
 import de.knito.typestones.block.TypestoneItem;
@@ -46,7 +46,7 @@ import de.knito.typestones.glyph.GlyphSet;
  * stone and dyes from inventories on any side but the back, and puts the blocks into the inventory at
  * the back. It holds no items itself; the two dye slots in its screen are only settings.
  */
-public class AlphaStationBlockEntity extends BlockEntity implements ExtendedMenuProvider<AlphaStationMenu.OpenData> {
+public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuProvider<TypewriterMenu.OpenData> {
 	public static final int INTERVAL = 5;
 	public static final int MAX_TEXT_LENGTH = 128;
 	public static final int MAX_REPEAT = 64;
@@ -59,12 +59,12 @@ public class AlphaStationBlockEntity extends BlockEntity implements ExtendedMenu
 		@Override
 		public void setChanged() {
 			super.setChanged();
-			AlphaStationBlockEntity.this.setChanged();
+			TypewriterBlockEntity.this.setChanged();
 		}
 
 		@Override
 		public boolean stillValid(Player player) {
-			return Container.stillValidBlockEntity(AlphaStationBlockEntity.this, player);
+			return Container.stillValidBlockEntity(TypewriterBlockEntity.this, player);
 		}
 	};
 
@@ -76,7 +76,7 @@ public class AlphaStationBlockEntity extends BlockEntity implements ExtendedMenu
 	private int made;
 	private boolean running;
 	private int ticks;
-	private StationStatus status = StationStatus.IDLE;
+	private TypewriterStatus status = TypewriterStatus.IDLE;
 
 	/** Synced to the open screen: 0 = status, 1 = blocks made, 2 = blocks in the job, 3 = repeat. */
 	private final ContainerData data = new ContainerData() {
@@ -101,8 +101,8 @@ public class AlphaStationBlockEntity extends BlockEntity implements ExtendedMenu
 		}
 	};
 
-	public AlphaStationBlockEntity(BlockPos pos, BlockState state) {
-		super(ModStation.ENTITY, pos, state);
+	public TypewriterBlockEntity(BlockPos pos, BlockState state) {
+		super(ModTypewriter.ENTITY, pos, state);
 	}
 
 	/** Keeps only characters a Typestone can show. */
@@ -141,11 +141,11 @@ public class AlphaStationBlockEntity extends BlockEntity implements ExtendedMenu
 
 	public void start() {
 		if (text.isEmpty()) {
-			status = StationStatus.NO_TEXT;
+			status = TypewriterStatus.NO_TEXT;
 			return;
 		}
 		if (dyeOf(dyeSamples.getItem(SLOT_LETTER)).isEmpty() && !text.isBlank()) {
-			status = StationStatus.NO_LETTER_DYE;
+			status = TypewriterStatus.NO_LETTER_DYE;
 			return;
 		}
 		jobText = text;
@@ -153,35 +153,35 @@ public class AlphaStationBlockEntity extends BlockEntity implements ExtendedMenu
 		made = 0;
 		running = true;
 		ticks = 0;
-		status = StationStatus.RUNNING;
+		status = TypewriterStatus.RUNNING;
 		setChanged();
 	}
 
 	public void stop() {
 		running = false;
-		status = StationStatus.IDLE;
+		status = TypewriterStatus.IDLE;
 		setChanged();
 	}
 
-	public static void serverTick(Level level, BlockPos pos, BlockState state, AlphaStationBlockEntity station) {
-		if (!station.running || ++station.ticks < INTERVAL) {
+	public static void serverTick(Level level, BlockPos pos, BlockState state, TypewriterBlockEntity typewriter) {
+		if (!typewriter.running || ++typewriter.ticks < INTERVAL) {
 			return;
 		}
-		station.ticks = 0;
-		station.status = station.makeOne(level, pos, state);
-		if (station.made >= station.jobText.length() * station.jobRepeat) {
-			station.running = false;
-			station.status = StationStatus.DONE;
+		typewriter.ticks = 0;
+		typewriter.status = typewriter.makeOne(level, pos, state);
+		if (typewriter.made >= typewriter.jobText.length() * typewriter.jobRepeat) {
+			typewriter.running = false;
+			typewriter.status = TypewriterStatus.DONE;
 		}
-		station.setChanged();
+		typewriter.setChanged();
 	}
 
 	/** Makes the next block of the job, all or nothing: materials are only used when the block fits. */
-	private StationStatus makeOne(Level level, BlockPos pos, BlockState state) {
-		Direction back = state.getValue(AlphaStationBlock.FACING).getOpposite();
+	private TypewriterStatus makeOne(Level level, BlockPos pos, BlockState state) {
+		Direction back = state.getValue(TypewriterBlock.FACING).getOpposite();
 		Storage<ItemVariant> output = ItemStorage.SIDED.find(level, pos.relative(back), back.getOpposite());
 		if (output == null) {
-			return StationStatus.NO_OUTPUT;
+			return TypewriterStatus.NO_OUTPUT;
 		}
 		List<Storage<ItemVariant>> inputs = new ArrayList<>();
 		for (Direction side : Direction.values()) {
@@ -198,28 +198,28 @@ public class AlphaStationBlockEntity extends BlockEntity implements ExtendedMenu
 		Optional<DyeColor> letter = dyeOf(dyeSamples.getItem(SLOT_LETTER));
 		Optional<DyeColor> background = dyeOf(dyeSamples.getItem(SLOT_BACKGROUND));
 		if (glyph != 0 && letter.isEmpty()) {
-			return StationStatus.NO_LETTER_DYE;
+			return TypewriterStatus.NO_LETTER_DYE;
 		}
 		Dyes dyes = new Dyes(letter.orElse(DyeColor.BLACK), background);
 		TypestoneItem item = ModBlocks.TYPESTONE_ITEMS.get(FontFace.CLASSIC);
 
 		try (Transaction transaction = Transaction.openOuter()) {
 			if (missing(inputs, Items.SMOOTH_STONE, transaction)) {
-				return StationStatus.NEEDS_STONE;
+				return TypewriterStatus.NEEDS_STONE;
 			}
 			if (glyph != 0 && missing(inputs, dyeItem(letter.get()), transaction)) {
-				return StationStatus.NEEDS_LETTER_DYE;
+				return TypewriterStatus.NEEDS_LETTER_DYE;
 			}
 			if (background.isPresent() && missing(inputs, dyeItem(background.get()), transaction)) {
-				return StationStatus.NEEDS_BACKGROUND_DYE;
+				return TypewriterStatus.NEEDS_BACKGROUND_DYE;
 			}
 			if (output.insert(ItemVariant.of(item.stack(glyph, dyes, 1)), 1, transaction) != 1) {
-				return StationStatus.OUTPUT_FULL;
+				return TypewriterStatus.OUTPUT_FULL;
 			}
 			transaction.commit();
 		}
 		made++;
-		return StationStatus.RUNNING;
+		return TypewriterStatus.RUNNING;
 	}
 
 	/** Takes one item from the first input that has it; true when none has it. */
@@ -242,7 +242,7 @@ public class AlphaStationBlockEntity extends BlockEntity implements ExtendedMenu
 		jobRepeat = Math.clamp(input.getIntOr("job_repeat", 1), 1, MAX_REPEAT);
 		made = Math.max(0, input.getIntOr("made", 0));
 		running = input.getBooleanOr("running", false) && !jobText.isEmpty();
-		status = running ? StationStatus.RUNNING : StationStatus.IDLE;
+		status = running ? TypewriterStatus.RUNNING : TypewriterStatus.IDLE;
 		dyeSamples.setItem(SLOT_LETTER, input.read("letter_dye", DyeColor.CODEC).map(c -> new ItemStack(dyeItem(c))).orElse(ItemStack.EMPTY));
 		dyeSamples.setItem(SLOT_BACKGROUND, input.read("background_dye", DyeColor.CODEC).map(c -> new ItemStack(dyeItem(c))).orElse(ItemStack.EMPTY));
 	}
@@ -262,16 +262,16 @@ public class AlphaStationBlockEntity extends BlockEntity implements ExtendedMenu
 
 	@Override
 	public Component getDisplayName() {
-		return Component.translatable("block.typestones.alpha_station");
+		return Component.translatable("block.typestones.typewriter");
 	}
 
 	@Override
 	public @Nullable AbstractContainerMenu createMenu(int containerId, Inventory inventory, Player player) {
-		return new AlphaStationMenu(containerId, inventory, dyeSamples, data, this);
+		return new TypewriterMenu(containerId, inventory, dyeSamples, data, this);
 	}
 
 	@Override
-	public AlphaStationMenu.OpenData getScreenOpeningData(ServerPlayer player) {
-		return new AlphaStationMenu.OpenData(worldPosition, text);
+	public TypewriterMenu.OpenData getScreenOpeningData(ServerPlayer player) {
+		return new TypewriterMenu.OpenData(worldPosition, text);
 	}
 }

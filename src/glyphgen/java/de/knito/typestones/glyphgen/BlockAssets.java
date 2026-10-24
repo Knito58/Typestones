@@ -113,6 +113,7 @@ final class BlockAssets {
 				+ "[{ \"type\": \"typestones:dye\" }, { \"type\": \"typestones:dye\", \"background\": true }] }";
 	}
 
+	/** The 26.3 loot format: "modifier" and "condition" with a "type", not "functions"/"conditions". */
 	private static String lootTable(String block) {
 		return """
 				{
@@ -124,23 +125,21 @@ final class BlockAssets {
 								{
 									"type": "minecraft:item",
 									"name": "typestones:%1$s",
-									"functions": [
+									"modifier": [
 										{
-											"function": "minecraft:copy_state",
+											"type": "minecraft:copy_state",
 											"block": "typestones:%1$s",
 											"properties": ["glyph", "dyed"]
 										},
 										{
-											"function": "minecraft:copy_components",
+											"type": "minecraft:copy_components",
 											"source": "block_entity",
 											"include": ["typestones:dyes"]
 										}
 									]
 								}
 							],
-							"conditions": [
-								{ "condition": "minecraft:survives_explosion" }
-							]
+							"condition": { "type": "minecraft:survives_explosion" }
 						}
 					]
 				}

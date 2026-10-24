@@ -1,0 +1,19 @@
+{
+	"variants": {
+		"facing=north": {
+			"model": "typestones:block/typewriter"
+		},
+		"facing=east": {
+			"model": "typestones:block/typewriter",
+			"y": 90
+		},
+		"facing=south": {
+			"model": "typestones:block/typewriter",
+			"y": 180
+		},
+		"facing=west": {
+			"model": "typestones:block/typewriter",
+			"y": 270
+		}
+	}
+}

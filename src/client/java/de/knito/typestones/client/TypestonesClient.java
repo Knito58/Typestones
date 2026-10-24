@@ -7,13 +7,13 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.BlockColorRegistry;
 
 import de.knito.typestones.ModBlocks;
-import de.knito.typestones.ModStation;
+import de.knito.typestones.ModTypewriter;
 import de.knito.typestones.Typestones;
 import de.knito.typestones.block.Dyes;
 import de.knito.typestones.client.mixin.ItemTintSourcesAccessor;
 
 /**
- * Client entrypoint: colors the placed blocks and the items, and opens the Alpha Station screen.
+ * Client entrypoint: colors the placed blocks and the items, and opens the Typewriter screen.
  */
 public class TypestonesClient implements ClientModInitializer {
 	@Override
@@ -28,6 +28,6 @@ public class TypestonesClient implements ClientModInitializer {
 
 		ItemTintSourcesAccessor.typestones$idMapper().put(Typestones.id("dye"), DyeTint.MAP_CODEC);
 
-		MenuScreens.register(ModStation.MENU, AlphaStationScreen::new);
+		MenuScreens.register(ModTypewriter.MENU, TypewriterScreen::new);
 	}
 }

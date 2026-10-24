@@ -6,14 +6,12 @@
 			"entries": [
 				{
 					"type": "minecraft:item",
-					"name": "typestones:alpha_station"
+					"name": "typestones:typewriter"
 				}
 			],
-			"conditions": [
-				{
-					"condition": "minecraft:survives_explosion"
-				}
-			]
+			"condition": {
+				"type": "minecraft:survives_explosion"
+			}
 		}
 	]
 }
