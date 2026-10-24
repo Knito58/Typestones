@@ -8,7 +8,7 @@ import io.netty.buffer.Unpooled;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
+import net.minecraft.world.item.DyeColor;
 
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 
@@ -29,7 +29,7 @@ public class TypewriterFontTest {
 
 	private static TypewriterBlockEntity typewriter() {
 		TypewriterBlockEntity typewriter = new TypewriterBlockEntity(BlockPos.ZERO, ModTypewriter.BLOCK.defaultBlockState());
-		typewriter.dyeSamples().setItem(TypewriterBlockEntity.SLOT_LETTER, new ItemStack(Items.BLACK_DYE));
+		typewriter.dyeSamples().setItem(TypewriterBlockEntity.SLOT_LETTER, new ItemStack(TypewriterBlockEntity.dyeItem(DyeColor.BLACK)));
 		return typewriter;
 	}
 
