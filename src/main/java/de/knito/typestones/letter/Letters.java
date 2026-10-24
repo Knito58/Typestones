@@ -67,6 +67,11 @@ public final class Letters {
 		return letter;
 	}
 
+	/** True when this game has the letter, without asking the server for it. */
+	public static boolean isKnown(String hash) {
+		return BUILT_IN.containsKey(hash) || RECEIVED.containsKey(hash);
+	}
+
 	/** One of the letters in the mod jar, or null. */
 	public static @Nullable LibraryLetter builtIn(String hash) {
 		return BUILT_IN.get(hash);
