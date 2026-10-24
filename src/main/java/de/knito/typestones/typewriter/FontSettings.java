@@ -28,7 +28,7 @@ public record FontSettings(String font, int size, int scale, int baseline, int s
 	public static final int ITALIC = 2;
 	private static final String[] STYLE_NAMES = {"", " Bold", " Italic", " Bold Italic"};
 
-	public static final FontSettings DEFAULT = new FontSettings(CLASSIC, 32, 100, 0, REGULAR);
+	public static final FontSettings DEFAULT = new FontSettings(CLASSIC, 64, 100, 0, REGULAR);
 
 	public static final StreamCodec<ByteBuf, FontSettings> STREAM_CODEC = StreamCodec.composite(
 			ByteBufCodecs.stringUtf8(LetterInfo.MAX_FONT * 4), FontSettings::font,
