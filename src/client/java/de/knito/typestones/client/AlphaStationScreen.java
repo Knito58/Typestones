@@ -42,7 +42,6 @@ public class AlphaStationScreen extends AbstractContainerScreen<AlphaStationMenu
 		textBox = new EditBox(font, leftPos + 8, topPos + 18, 160, 18, Component.translatable("gui.typestones.text"));
 		textBox.setMaxLength(AlphaStationBlockEntity.MAX_TEXT_LENGTH);
 		textBox.setHint(Component.translatable("gui.typestones.text_hint"));
-		textBox.setFilter(text -> AlphaStationBlockEntity.cleanText(text).equals(text));
 		textBox.setValue(oldText);
 		addRenderableWidget(textBox);
 
@@ -87,8 +86,13 @@ public class AlphaStationScreen extends AbstractContainerScreen<AlphaStationMenu
 		send(StationActionPayload.Action.SAVE);
 	}
 
+	/** Characters a Typestone can't show are dropped here, so the box shows what the station will make. */
 	private void send(StationActionPayload.Action action) {
-		ClientPlayNetworking.send(new StationActionPayload(action, textBox.getValue(), currentRepeat()));
+		String text = AlphaStationBlockEntity.cleanText(textBox.getValue());
+		if (!text.equals(textBox.getValue())) {
+			textBox.setValue(text);
+		}
+		ClientPlayNetworking.send(new StationActionPayload(action, text, currentRepeat()));
 	}
 
 	@Override
