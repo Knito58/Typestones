@@ -113,6 +113,7 @@ public class ModLetters {
 		if (!batch.isEmpty()) {
 			ServerPlayNetworking.send(player, new LetterPayloads.Answer(batch));
 		}
+		Typestones.LOGGER.info("{} asked for {} letters", player.getPlainTextName(), hashes.size());
 	}
 
 	/** Adds a player's new baked letters to the library, with the player as baker and today as date. */

@@ -19,6 +19,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
+import de.knito.typestones.Typestones;
 import de.knito.typestones.letter.Letters;
 import de.knito.typestones.letter.LibraryLetter;
 import de.knito.typestones.network.LetterPayloads;
@@ -86,6 +87,7 @@ public final class LetterSync {
 			return;
 		}
 		List<String> hashes = new ArrayList<>();
+		Typestones.LOGGER.info("Asking the server for {} letters", TO_REQUEST.size());
 		for (String hash = TO_REQUEST.poll(); hash != null; hash = TO_REQUEST.poll()) {
 			hashes.add(hash);
 			if (hashes.size() == LetterPayloads.MAX_REQUEST) {
@@ -99,6 +101,7 @@ public final class LetterSync {
 	}
 
 	private static void received(List<LibraryLetter> letters) {
+		Typestones.LOGGER.info("Received {} letters from the server", letters.size());
 		Letters.receive(letters);
 		redraw(letters.stream().map(LibraryLetter::hash).toList());
 	}
@@ -118,6 +121,7 @@ public final class LetterSync {
 				}
 			}
 		}
+		Typestones.LOGGER.info("Redrawing {} sections for {} letters", sections.size(), hashes.size());
 		for (long section : sections) {
 			level.setSectionDirtyWithNeighbors(SectionPos.x(section), SectionPos.y(section), SectionPos.z(section));
 		}
