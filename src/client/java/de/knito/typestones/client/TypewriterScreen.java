@@ -52,6 +52,7 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 	private EditBox textBox;
 	private EditBox filterBox;
 	private Button sizeButton;
+	private Button styleButton;
 	private final List<Button> fontButtons = new ArrayList<>();
 	/** -1 until the player changes it: then the screen shows what the typewriter has stored. */
 	private int repeat = -1;
@@ -114,8 +115,11 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 
 		fontButtons.clear();
 		sizeButton = Button.builder(sizeLabel(), b -> changeSize())
-				.bounds(px + 6, topPos + 60, PANEL_WIDTH - 12, 18).build();
+				.bounds(px + 6, topPos + 60, 40, 18).build();
 		fontButtons.add(sizeButton);
+		styleButton = Button.builder(styleLabel(), b -> changeStyle())
+				.bounds(px + 50, topPos + 60, PANEL_WIDTH - 56, 18).build();
+		fontButtons.add(styleButton);
 		fontButtons.add(Button.builder(Component.literal("-"), b -> changeScale(-1)).bounds(px + 6, topPos + 80, 16, 18).build());
 		fontButtons.add(Button.builder(Component.literal("+"), b -> changeScale(1)).bounds(px + PANEL_WIDTH - 22, topPos + 80, 16, 18).build());
 		fontButtons.add(Button.builder(Component.literal("-"), b -> changeBaseline(-1)).bounds(px + 6, topPos + 100, 16, 18).build());
@@ -132,6 +136,18 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 	private void updateFontButtons() {
 		fontButtons.forEach(b -> b.active = !settings.isClassic());
 		sizeButton.setMessage(sizeLabel());
+		styleButton.setMessage(styleLabel());
+	}
+
+	private Component styleLabel() {
+		return Component.translatable("gui.typestones.font_style." + settings.style());
+	}
+
+	/** Regular, Bold, Italic, Bold Italic. */
+	private void changeStyle() {
+		settings = settings.withStyle((settings.style() + 1) % 4);
+		updateFontButtons();
+		send(TypewriterActionPayload.Action.SAVE);
 	}
 
 	private Component sizeLabel() {
@@ -259,7 +275,7 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 			}
 			hashes.add(letter.hash());
 			baked.putIfAbsent(letter.hash(), new LibraryLetter(letter,
-					new LetterInfo(new String(Character.toChars(c)), settings.font(), locale, "", "")));
+					new LetterInfo(new String(Character.toChars(c)), settings.fontName(), locale, "", "")));
 		});
 		LetterSync.upload(baked.values());
 		return hashes;

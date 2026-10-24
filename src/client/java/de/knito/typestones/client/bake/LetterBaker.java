@@ -46,7 +46,7 @@ public final class LetterBaker {
 
 	/** Baked letters; empty for a blank glyph. Only used on the render thread. */
 	private static final Map<Key, Optional<Letter>> CACHE = new HashMap<>();
-	private static final Map<String, Font> FONTS = new HashMap<>();
+	private static final Map<String, Map<Integer, Font>> FONTS = new HashMap<>();
 	private static @Nullable List<String> families;
 
 	private LetterBaker() {
@@ -62,20 +62,24 @@ public final class LetterBaker {
 		return families;
 	}
 
-	/** The font at the reference size, or null when this computer doesn't have it. */
-	private static @Nullable Font font(String family) {
+	/**
+	 * The font in a style at the reference size, or null when this computer doesn't have the family.
+	 * Java takes the family's Bold or Italic face when installed and slants or thickens the regular one
+	 * otherwise. The style values of {@link FontSettings} are those of {@link Font}.
+	 */
+	private static @Nullable Font font(String family, int style) {
 		if (!families().contains(family)) {
 			return null;
 		}
-		return FONTS.computeIfAbsent(family, f -> new Font(f, Font.PLAIN, (int) REFERENCE));
+		return FONTS.computeIfAbsent(family, f -> new HashMap<>()).computeIfAbsent(style, s -> new Font(family, s, (int) REFERENCE));
 	}
 
 	public static boolean has(String family) {
-		return font(family) != null;
+		return font(family, Font.PLAIN) != null;
 	}
 
 	public static boolean canDisplay(String family, int codePoint) {
-		Font font = font(family);
+		Font font = font(family, Font.PLAIN);
 		return font != null && font.canDisplay(codePoint);
 	}
 
@@ -95,7 +99,7 @@ public final class LetterBaker {
 
 	/** Where the baseline lies, in letter pixels from the top; for the ruler in the Typewriter screen. */
 	public static double baseline(FontSettings settings) {
-		Font font = font(settings.font());
+		Font font = font(settings.font(), settings.style());
 		return font == null ? settings.size() * 0.75 : layout(font, settings)[1] / SUPERSAMPLE;
 	}
 
@@ -111,7 +115,7 @@ public final class LetterBaker {
 	}
 
 	private static @Nullable Letter draw(FontSettings settings, int codePoint) {
-		Font base = font(settings.font());
+		Font base = font(settings.font(), settings.style());
 		if (base == null) {
 			return null;
 		}
