@@ -17,7 +17,7 @@ permissions:
   contents: write
 
 env:
-  CURSEFORGE_PROJECT_ID: ""  # Typestones on CurseForge: fill in the project id; empty skips the upload
+  CURSEFORGE_PROJECT_ID: "1762715"  # Typestones on CurseForge
 
 jobs:
   release:
