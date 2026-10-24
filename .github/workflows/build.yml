@@ -39,6 +39,13 @@ jobs:
                   details = [d for d in lines[i + 1:i + 4] if not re.match(r"^(/\S+\.java:\d+:|\d+ errors?$)", d)]
                   msg = "%0A".join([m.group(3)] + details).replace("%", "%25").replace("%250A", "%0A")
                   print(f"::error file={m.group(1).replace(ws, '')},line={m.group(2)}::{msg}")
+          # Failed game tests and Gradle's own summary, so they show up without the job log
+          esc = lambda t: t.replace("%", "%25").replace("\r", "").replace("\n", "%0A")
+          for i, l in enumerate(lines):
+              if re.search(r"(dropKeepsLetterAndDyes|typestonedroptest|GameTest).*(fail|Fail|FAIL)|The drop |Expected \d+ drop", l):
+                  print("::error title=Game test::" + esc(l.strip()[:900]))
+              if l.startswith("* What went wrong:"):
+                  print("::error title=Gradle::" + esc("\n".join(lines[i + 1:i + 10])[:900]))
           PY
       - name: start a server to check the mod's data files
         # Recipes, advancements etc. are only checked when a world loads, not by the build.
@@ -56,6 +63,8 @@ jobs:
             echo "::error::The server did not start with the mod loaded"
             exit 1
           fi
+          # Warnings about the mod's data (e.g. a loot table the game rejected) don't stop the server
+          grep -iE "typestone" server.log | grep -iE "warn|error|fail|invalid|validation" | head -20 | sed 's/^/::warning title=Server log::/' || true
           echo "Server started fine"
       - name: capture build artifacts
         uses: actions/upload-artifact@v7

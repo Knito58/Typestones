@@ -25,6 +25,17 @@ loom {
 	}
 }
 
+// Game tests in src/gametest run as part of "build" (task runGameTest), on a dedicated server.
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = 'typestones-gametest'
+		enableClientGameTests = false
+		eula = true
+	}
+}
+tasks.named('check') { dependsOn 'runGameTest' }
+
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
