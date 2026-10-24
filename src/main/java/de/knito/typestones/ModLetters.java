@@ -188,6 +188,11 @@ public class ModLetters {
 			return 0;
 		}
 		LetterInfo info = letter.info();
+		if (Letters.builtIn(hash) != null) {
+			context.getSource().sendSuccess(() -> Component.translatable("commands.typestones.letter.info_built_in",
+					info.text(), info.unicodeName(), info.script(), info.font(), letter.letter().size(), hash), false);
+			return 1;
+		}
 		context.getSource().sendSuccess(() -> Component.translatable("commands.typestones.letter.info",
 				info.text(), info.unicodeName(), info.script(), info.font(), letter.letter().size(),
 				info.locale(), info.baker(), info.baked(), hash), false);

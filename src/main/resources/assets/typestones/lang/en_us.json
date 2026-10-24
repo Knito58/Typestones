@@ -28,6 +28,7 @@
 	"commands.typestones.letters": "The letter library holds %s of at most %s letters (built-in letters not counted).",
 	"commands.typestones.letter.unknown": "No letter with hash %s.",
 	"commands.typestones.letter.info": "\"%s\" (%s, script %s), font %s at %s×%5$s, language %s, baked by %s on %s, hash %s",
+	"commands.typestones.letter.info_built_in": "\"%s\" (%s, script %s), font %s at %s×%5$s, built in, hash %s",
 	"commands.typestones.letter.not_removable": "Can't remove %s: it is built in or not in the library.",
 	"commands.typestones.letter.removed": "Removed letter %s. Stones with it now show as plain.",
 	"commands.typestones.letter.hold": "Hold a Typestone with a letter, or give a hash."
