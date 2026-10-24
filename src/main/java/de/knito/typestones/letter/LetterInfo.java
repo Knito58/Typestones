@@ -53,10 +53,21 @@ public record LetterInfo(String text, String font, String locale, String baker, 
 			if (!name.isEmpty()) {
 				name.append(" + ");
 			}
-			String n = Character.getName(c);
-			name.append(n != null ? n : String.format("U+%04X", c));
+			name.append(unicodeName(c));
 		});
 		return name.toString();
+	}
+
+	/**
+	 * Java names CJK ideographs after their block ("CJK UNIFIED IDEOGRAPHS EXTENSION A 3400"); Unicode
+	 * itself calls them "CJK UNIFIED IDEOGRAPH-3400".
+	 */
+	private static String unicodeName(int c) {
+		String name = Character.getName(c);
+		if (name == null) {
+			return String.format("U+%04X", c);
+		}
+		return name.startsWith("CJK UNIFIED IDEOGRAPHS") ? String.format("CJK UNIFIED IDEOGRAPH-%04X", c) : name;
 	}
 
 	/** E.g. "LATIN" or "HAN", from the first character; "UNKNOWN" for an empty text. */
