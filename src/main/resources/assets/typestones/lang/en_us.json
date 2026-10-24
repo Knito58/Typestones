@@ -1,4 +1,27 @@
 {
 	"block.typestones.typestone": "Typestone",
-	"item.typestones.typestone.with_glyph": "%s \"%s\""
+	"item.typestones.typestone.with_glyph": "%s \"%s\"",
+	"block.typestones.alpha_station": "Alpha Station",
+	"gui.typestones.text": "Text",
+	"gui.typestones.text_hint": "Type the text for the blocks",
+	"gui.typestones.preset_letters": "A–Z",
+	"gui.typestones.preset_digits": "0–9",
+	"gui.typestones.preset_all": "All",
+	"gui.typestones.clear": "Clear",
+	"gui.typestones.repeat": "×%s",
+	"gui.typestones.progress": "%s / %s",
+	"gui.typestones.start": "Start",
+	"gui.typestones.stop": "Stop",
+	"gui.typestones.slot_letter": "Letter dye: click with a dye",
+	"gui.typestones.slot_background": "Background dye: click with a dye, empty for smooth stone",
+	"gui.typestones.status.idle": "Idle",
+	"gui.typestones.status.running": "Running",
+	"gui.typestones.status.done": "Done",
+	"gui.typestones.status.no_text": "Type a text first",
+	"gui.typestones.status.no_letter_dye": "Set a letter dye first",
+	"gui.typestones.status.no_output": "No inventory at the back",
+	"gui.typestones.status.output_full": "Inventory at the back is full",
+	"gui.typestones.status.needs_stone": "Waiting for smooth stone",
+	"gui.typestones.status.needs_letter_dye": "Waiting for letter dye",
+	"gui.typestones.status.needs_background_dye": "Waiting for background dye"
 }
