@@ -279,7 +279,7 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 	@Override
 	protected void loadAdditional(ValueInput input) {
 		super.loadAdditional(input);
-		font = new FontSettings(input.getStringOr("font", FontSettings.CLASSIC), input.getIntOr("letter_size", 32),
+		font = new FontSettings(input.getStringOr("font", FontSettings.CLASSIC), input.getIntOr("letter_size", FontSettings.DEFAULT.size()),
 				input.getIntOr("scale", 100), input.getIntOr("baseline", 0), input.getIntOr("font_style", FontSettings.REGULAR));
 		text = cleanText(input.getStringOr("text", ""), font.isClassic());
 		repeat = Math.clamp(input.getIntOr("repeat", 1), 1, MAX_REPEAT);

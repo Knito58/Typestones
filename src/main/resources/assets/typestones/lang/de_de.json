@@ -12,6 +12,7 @@
 	"gui.typestones.font": "Schrift",
 	"gui.typestones.font_filter": "Schriften filtern",
 	"gui.typestones.font_classic": "Klassisch (eingebaut)",
+	"gui.typestones.font_classic_button": "Klassisch",
 	"gui.typestones.font_lacks": "Zeichen fehlt in der Schrift",
 	"gui.typestones.font_missing": "Schrift fehlt auf diesem PC",
 	"gui.typestones.letter_size": "%s px",
