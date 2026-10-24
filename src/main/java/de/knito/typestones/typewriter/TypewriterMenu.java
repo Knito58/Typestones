@@ -22,10 +22,11 @@ import de.knito.typestones.ModTypewriter;
 
 public class TypewriterMenu extends AbstractContainerMenu {
 	/** Sent to the client when the screen opens. */
-	public record OpenData(BlockPos pos, String text) {
+	public record OpenData(BlockPos pos, String text, FontSettings font) {
 		public static final StreamCodec<ByteBuf, OpenData> STREAM_CODEC = StreamCodec.composite(
 				BlockPos.STREAM_CODEC, OpenData::pos,
 				ByteBufCodecs.stringUtf8(TypewriterBlockEntity.MAX_TEXT_LENGTH * 4), OpenData::text,
+				FontSettings.STREAM_CODEC, OpenData::font,
 				OpenData::new
 		);
 	}
@@ -38,21 +39,22 @@ public class TypewriterMenu extends AbstractContainerMenu {
 	private final Container dyeSamples;
 	private final ContainerData data;
 	private final String initialText;
+	private final FontSettings initialFont;
 	/** Only set on the server. */
 	private final @Nullable TypewriterBlockEntity typewriter;
 
 	/** Client side. */
 	public TypewriterMenu(int containerId, Inventory inventory, OpenData openData) {
-		this(containerId, inventory, new SimpleContainer(2), new SimpleContainerData(4), null, openData.text());
+		this(containerId, inventory, new SimpleContainer(2), new SimpleContainerData(4), null, openData.text(), openData.font());
 	}
 
 	/** Server side. */
 	public TypewriterMenu(int containerId, Inventory inventory, Container dyeSamples, ContainerData data, TypewriterBlockEntity typewriter) {
-		this(containerId, inventory, dyeSamples, data, typewriter, "");
+		this(containerId, inventory, dyeSamples, data, typewriter, "", FontSettings.DEFAULT);
 	}
 
 	private TypewriterMenu(int containerId, Inventory inventory, Container dyeSamples, ContainerData data,
-			@Nullable TypewriterBlockEntity typewriter, String initialText) {
+			@Nullable TypewriterBlockEntity typewriter, String initialText, FontSettings initialFont) {
 		super(ModTypewriter.MENU, containerId);
 		checkContainerSize(dyeSamples, 2);
 		checkContainerDataCount(data, 4);
@@ -60,6 +62,7 @@ public class TypewriterMenu extends AbstractContainerMenu {
 		this.data = data;
 		this.typewriter = typewriter;
 		this.initialText = initialText;
+		this.initialFont = initialFont;
 		addSlot(new SampleSlot(dyeSamples, TypewriterBlockEntity.SLOT_LETTER, LETTER_X, DYES_Y));
 		addSlot(new SampleSlot(dyeSamples, TypewriterBlockEntity.SLOT_BACKGROUND, BACKGROUND_X, DYES_Y));
 		addStandardInventorySlots(inventory, 8, INVENTORY_Y);
@@ -89,6 +92,10 @@ public class TypewriterMenu extends AbstractContainerMenu {
 
 	public String initialText() {
 		return initialText;
+	}
+
+	public FontSettings initialFont() {
+		return initialFont;
 	}
 
 	public TypewriterStatus status() {

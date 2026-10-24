@@ -19,6 +19,7 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 
+import de.knito.typestones.letter.LetterLibrary;
 import de.knito.typestones.typewriter.TypewriterBlock;
 import de.knito.typestones.typewriter.TypewriterBlockEntity;
 import de.knito.typestones.typewriter.TypewriterMenu;
@@ -59,11 +60,11 @@ public class ModTypewriter {
 				return;
 			}
 			TypewriterBlockEntity typewriter = menu.typewriter();
-			typewriter.applySettings(payload.text(), payload.repeat());
+			typewriter.applySettings(payload.text(), payload.repeat(), payload.font());
 			switch (payload.action()) {
 				case SAVE -> {
 				}
-				case START -> typewriter.start();
+				case START -> typewriter.start(payload.letters(), LetterLibrary.get(context.player().level().getServer()));
 				case STOP -> typewriter.stop();
 			}
 		});

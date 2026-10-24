@@ -13,6 +13,10 @@ First version for Minecraft 26.3 (Fabric). Needed on client and server.
   differ), buttons for A–Z, 0–9 and all characters, repeat up to 64 times.
 - Letters are drawn as flat rectangles in the letter dye, not as textures. A stone stores a hash of
   its letter's pixels, so the game needs no block or texture per character.
+- Fonts: the Typewriter bakes letters from any font installed on the player's computer, in any
+  script, at 16, 32 or 64 pixels, with scale and baseline settings and a preview with the cell and
+  baseline. New letters go to the world's letter library when Start is pressed. The built-in classic
+  face needs no baking.
 - Letter library per world: letters baked by players are saved with the world, and each player's game
   fetches a letter from the server the first time it shows a stone with it (limits per player and
   minute, at most 32,768 letters per world).

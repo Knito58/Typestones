@@ -115,11 +115,15 @@ public class ModLetters {
 		}
 	}
 
-	/** Adds a player's baked letters to the library, with the player as baker and today as date. */
+	/** Adds a player's new baked letters to the library, with the player as baker and today as date. */
 	static void upload(ServerPlayer player, List<LibraryLetter> letters) {
 		Usage usage = usage(player);
 		LetterLibrary library = LetterLibrary.get(player.level().getServer());
 		for (LibraryLetter sent : letters) {
+			// A Typewriter sends all letters of its text on each Start; known ones cost nothing.
+			if (library.find(sent.hash()) != null) {
+				continue;
+			}
 			if (usage.uploaded >= UPLOADS_PER_MINUTE) {
 				Typestones.LOGGER.warn("{} uploaded more than {} letters in a minute", player.getPlainTextName(), UPLOADS_PER_MINUTE);
 				return;

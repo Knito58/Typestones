@@ -1,6 +1,7 @@
 package de.knito.typestones.client.network;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +56,25 @@ public final class LetterSync {
 	/** Called by the block model when it drew the stone at pos without its letter. */
 	public static void waitFor(String hash, BlockPos pos) {
 		WAITING.computeIfAbsent(hash, h -> ConcurrentHashMap.newKeySet()).add(pos.immutable());
+	}
+
+	/**
+	 * Sends letters baked here to the server's library, and keeps them, so stones with them show
+	 * without asking the server. Packets go out in order, so they arrive before a following Start.
+	 */
+	public static void upload(Collection<LibraryLetter> letters) {
+		Letters.receive(letters);
+		List<LibraryLetter> batch = new ArrayList<>();
+		for (LibraryLetter letter : letters) {
+			batch.add(letter);
+			if (batch.size() == LetterPayloads.MAX_UPLOAD) {
+				ClientPlayNetworking.send(new LetterPayloads.Upload(List.copyOf(batch)));
+				batch.clear();
+			}
+		}
+		if (!batch.isEmpty()) {
+			ClientPlayNetworking.send(new LetterPayloads.Upload(batch));
+		}
 	}
 
 	private static void sendRequests() {

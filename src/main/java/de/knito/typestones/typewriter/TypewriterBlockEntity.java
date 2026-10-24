@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.mojang.serialization.Codec;
+
 import org.jspecify.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
@@ -38,10 +40,13 @@ import de.knito.typestones.ModBlocks;
 import de.knito.typestones.ModTypewriter;
 import de.knito.typestones.block.Dyes;
 import de.knito.typestones.block.TypestoneItem;
+import de.knito.typestones.letter.LetterLibrary;
 import de.knito.typestones.letter.Letters;
 
 /**
- * Makes one Typestone per character of a line of text, every {@link #INTERVAL} ticks. Takes smooth
+ * Makes one Typestone per character of a line of text, every {@link #INTERVAL} ticks. The letters come
+ * from the built-in classic face or, for any other font, from the world's letter library, where the
+ * player's game put them when Start was pressed (see {@link FontSettings}). Takes smooth
  * stone and dyes from inventories on any side but the back, and puts the blocks into the inventory at
  * the back. It holds no items itself; the two dye slots in its screen are only settings.
  */
@@ -67,10 +72,13 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 		}
 	};
 
+	private static final Codec<List<String>> LETTERS_CODEC = Codec.STRING.listOf();
+
 	private String text = "";
 	private int repeat = 1;
-	/** The job: text and repeat as they were when Start was pressed, and how many blocks are made. */
-	private String jobText = "";
+	private FontSettings font = FontSettings.DEFAULT;
+	/** The job: one letter hash per character and the repeat as they were at Start, and how many blocks are made. */
+	private List<String> jobLetters = List.of();
 	private int jobRepeat = 1;
 	private int made;
 	private boolean running;
@@ -84,7 +92,7 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 			return switch (index) {
 				case 0 -> status.ordinal();
 				case 1 -> made;
-				case 2 -> jobText.length() * jobRepeat;
+				case 2 -> jobLetters.size() * jobRepeat;
 				case 3 -> repeat;
 				default -> 0;
 			};
@@ -104,15 +112,26 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 		super(ModTypewriter.ENTITY, pos, state);
 	}
 
-	/** Keeps only characters a Typestone can show. */
-	public static String cleanText(String text) {
+	/**
+	 * Keeps only characters a Typestone can show: for the classic face the ones it has, for other fonts
+	 * anything but control characters. At most {@link #MAX_TEXT_LENGTH} chars; pairs are not split.
+	 */
+	public static String cleanText(String text, boolean classic) {
 		StringBuilder clean = new StringBuilder();
-		for (char c : text.toCharArray()) {
-			if (Letters.hasClassic(c) && clean.length() < MAX_TEXT_LENGTH) {
-				clean.append(c);
+		text.codePoints().forEach(c -> {
+			boolean shown = classic ? Character.isBmpCodePoint(c) && Letters.hasClassic((char) c) : !Character.isISOControl(c);
+			if (shown && clean.length() + Character.charCount(c) <= MAX_TEXT_LENGTH) {
+				clean.appendCodePoint(c);
 			}
-		}
+		});
 		return clean.toString();
+	}
+
+	/** The classic letter of each character; {@link Letters#NONE} for the space. */
+	public static List<String> classicLetters(String text) {
+		List<String> letters = new ArrayList<>();
+		text.codePoints().forEach(c -> letters.add(Character.isBmpCodePoint(c) ? Letters.classic((char) c) : Letters.NONE));
+		return List.copyOf(letters);
 	}
 
 	public static Item dyeItem(DyeColor color) {
@@ -132,22 +151,47 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 		return dyeSamples;
 	}
 
-	public void applySettings(String text, int repeat) {
-		this.text = cleanText(text);
+	public void applySettings(String text, int repeat, FontSettings font) {
+		this.font = font;
+		this.text = cleanText(text, font.isClassic());
 		this.repeat = Math.clamp(repeat, 1, MAX_REPEAT);
 		setChanged();
 	}
 
-	public void start() {
+	public FontSettings font() {
+		return font;
+	}
+
+	public TypewriterStatus status() {
+		return status;
+	}
+
+	/** The letter hash of each character of the running or last job. */
+	public List<String> jobLetters() {
+		return jobLetters;
+	}
+
+	/**
+	 * Starts the job. With a font other than classic, letters holds the hash of each character's
+	 * letter; every one must be in the library, else nothing starts.
+	 */
+	public void start(List<String> letters, LetterLibrary library) {
 		if (text.isEmpty()) {
 			status = TypewriterStatus.NO_TEXT;
 			return;
 		}
-		if (dyeOf(dyeSamples.getItem(SLOT_LETTER)).isEmpty() && !text.isBlank()) {
+		List<String> job = font.isClassic() ? classicLetters(text) : List.copyOf(letters);
+		if (job.size() != text.codePointCount(0, text.length())
+				|| job.stream().anyMatch(hash -> !hash.equals(Letters.NONE) && library.find(hash) == null)) {
+			status = TypewriterStatus.MISSING_LETTERS;
+			return;
+		}
+		boolean blank = job.stream().allMatch(Letters.NONE::equals);
+		if (dyeOf(dyeSamples.getItem(SLOT_LETTER)).isEmpty() && !blank) {
 			status = TypewriterStatus.NO_LETTER_DYE;
 			return;
 		}
-		jobText = text;
+		jobLetters = job;
 		jobRepeat = repeat;
 		made = 0;
 		running = true;
@@ -168,7 +212,7 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 		}
 		typewriter.ticks = 0;
 		typewriter.status = typewriter.makeOne(level, pos, state);
-		if (typewriter.made >= typewriter.jobText.length() * typewriter.jobRepeat) {
+		if (typewriter.made >= typewriter.jobLetters.size() * typewriter.jobRepeat) {
 			typewriter.running = false;
 			typewriter.status = TypewriterStatus.DONE;
 		}
@@ -192,11 +236,11 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 			}
 		}
 
-		char c = jobText.charAt(made % jobText.length());
-		String glyph = Letters.classic(c);
+		String glyph = jobLetters.get(made % jobLetters.size());
+		boolean inked = !glyph.equals(Letters.NONE);
 		Optional<DyeColor> letter = dyeOf(dyeSamples.getItem(SLOT_LETTER));
 		Optional<DyeColor> background = dyeOf(dyeSamples.getItem(SLOT_BACKGROUND));
-		if (c != ' ' && letter.isEmpty()) {
+		if (inked && letter.isEmpty()) {
 			return TypewriterStatus.NO_LETTER_DYE;
 		}
 		Dyes dyes = new Dyes(letter.orElse(DyeColor.BLACK), background);
@@ -206,7 +250,7 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 			if (missing(inputs, Items.SMOOTH_STONE, transaction)) {
 				return TypewriterStatus.NEEDS_STONE;
 			}
-			if (c != ' ' && missing(inputs, dyeItem(letter.get()), transaction)) {
+			if (inked && missing(inputs, dyeItem(letter.get()), transaction)) {
 				return TypewriterStatus.NEEDS_LETTER_DYE;
 			}
 			if (background.isPresent() && missing(inputs, dyeItem(background.get()), transaction)) {
@@ -235,12 +279,17 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 	@Override
 	protected void loadAdditional(ValueInput input) {
 		super.loadAdditional(input);
-		text = cleanText(input.getStringOr("text", ""));
+		font = new FontSettings(input.getStringOr("font", FontSettings.CLASSIC), input.getIntOr("letter_size", 32),
+				input.getIntOr("scale", 100), input.getIntOr("baseline", 0));
+		text = cleanText(input.getStringOr("text", ""), font.isClassic());
 		repeat = Math.clamp(input.getIntOr("repeat", 1), 1, MAX_REPEAT);
-		jobText = cleanText(input.getStringOr("job_text", ""));
+		// Typewriters from before fonts saved the job as classic text.
+		jobLetters = input.read("job_letters", LETTERS_CODEC)
+				.map(saved -> List.copyOf(saved.subList(0, Math.min(saved.size(), MAX_TEXT_LENGTH))))
+				.orElseGet(() -> classicLetters(cleanText(input.getStringOr("job_text", ""), true)));
 		jobRepeat = Math.clamp(input.getIntOr("job_repeat", 1), 1, MAX_REPEAT);
 		made = Math.max(0, input.getIntOr("made", 0));
-		running = input.getBooleanOr("running", false) && !jobText.isEmpty();
+		running = input.getBooleanOr("running", false) && !jobLetters.isEmpty();
 		status = running ? TypewriterStatus.RUNNING : TypewriterStatus.IDLE;
 		dyeSamples.setItem(SLOT_LETTER, input.read("letter_dye", DyeColor.CODEC).map(c -> new ItemStack(dyeItem(c))).orElse(ItemStack.EMPTY));
 		dyeSamples.setItem(SLOT_BACKGROUND, input.read("background_dye", DyeColor.CODEC).map(c -> new ItemStack(dyeItem(c))).orElse(ItemStack.EMPTY));
@@ -251,7 +300,11 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 		super.saveAdditional(output);
 		output.putString("text", text);
 		output.putInt("repeat", repeat);
-		output.putString("job_text", jobText);
+		output.putString("font", font.font());
+		output.putInt("letter_size", font.size());
+		output.putInt("scale", font.scale());
+		output.putInt("baseline", font.baseline());
+		output.store("job_letters", LETTERS_CODEC, jobLetters);
 		output.putInt("job_repeat", jobRepeat);
 		output.putInt("made", made);
 		output.putBoolean("running", running);
@@ -271,6 +324,6 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 
 	@Override
 	public TypewriterMenu.OpenData getScreenOpeningData(ServerPlayer player) {
-		return new TypewriterMenu.OpenData(worldPosition, text);
+		return new TypewriterMenu.OpenData(worldPosition, text, font);
 	}
 }

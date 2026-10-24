@@ -1,5 +1,7 @@
 package de.knito.typestones.typewriter;
 
+import java.util.List;
+
 import io.netty.buffer.ByteBuf;
 
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -8,8 +10,13 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 import de.knito.typestones.Typestones;
 
-/** A button press in the Typewriter screen. Always carries the current text and repeat count. */
-public record TypewriterActionPayload(Action action, String text, int repeat) implements CustomPacketPayload {
+/**
+ * A button press in the Typewriter screen. Always carries the current settings. On Start with a font
+ * other than classic it also carries the hash of each character's letter, which the player's game
+ * baked and uploaded just before; {@link de.knito.typestones.letter.Letters#NONE} stands for a blank.
+ */
+public record TypewriterActionPayload(Action action, String text, int repeat, FontSettings font, List<String> letters)
+		implements CustomPacketPayload {
 	public enum Action {
 		SAVE, START, STOP
 	}
@@ -20,6 +27,8 @@ public record TypewriterActionPayload(Action action, String text, int repeat) im
 			ByteBufCodecs.idMapper(i -> Action.values()[Math.clamp(i, 0, Action.values().length - 1)], Action::ordinal), TypewriterActionPayload::action,
 			ByteBufCodecs.stringUtf8(TypewriterBlockEntity.MAX_TEXT_LENGTH * 4), TypewriterActionPayload::text,
 			ByteBufCodecs.VAR_INT, TypewriterActionPayload::repeat,
+			FontSettings.STREAM_CODEC, TypewriterActionPayload::font,
+			ByteBufCodecs.stringUtf8(64).apply(ByteBufCodecs.list(TypewriterBlockEntity.MAX_TEXT_LENGTH)), TypewriterActionPayload::letters,
 			TypewriterActionPayload::new
 	);
 
