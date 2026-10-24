@@ -12,11 +12,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.Util;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 
@@ -47,6 +49,9 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 	private static final int PANEL_WIDTH = 120;
 	private static final int PREVIEW = 64;
 	private static final int PREVIEW_Y = 122;
+	private static final int MESSAGE_GAP = 3;
+	private static final int MESSAGE_HEIGHT = 12;
+	private static final SystemToast.SystemToastId BAKED_TOAST = new SystemToast.SystemToastId();
 	private static final String PREVIEW_SAMPLE = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
 	private EditBox textBox;
@@ -75,6 +80,7 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		super.init();
 		// Center the screen and its font panel together.
 		leftPos = (width - imageWidth - PANEL_GAP - PANEL_WIDTH) / 2;
+		topPos = Math.max(0, (height - imageHeight - MESSAGE_GAP - MESSAGE_HEIGHT) / 2);
 		String oldText = textBox != null ? textBox.getValue() : menu.initialText();
 		String oldFilter = filterBox != null ? filterBox.getValue() : "";
 
@@ -273,6 +279,7 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		String locale = Minecraft.getInstance().getLanguageManager().getSelected();
 		List<String> hashes = new ArrayList<>();
 		Map<String, LibraryLetter> baked = new LinkedHashMap<>();
+		int[] fresh = {0};
 		text.codePoints().forEach(c -> {
 			Letter letter = LetterBaker.bake(settings, c);
 			if (letter == null) {
@@ -280,10 +287,18 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 				return;
 			}
 			hashes.add(letter.hash());
+			if (!baked.containsKey(letter.hash()) && !Letters.isKnown(letter.hash())) {
+				fresh[0]++;
+			}
 			baked.putIfAbsent(letter.hash(), new LibraryLetter(letter,
 					new LetterInfo(new String(Character.toChars(c)), settings.fontName(), locale, "", "")));
 		});
 		LetterSync.upload(baked.values());
+		if (fresh[0] > 0) {
+			Minecraft minecraft = Minecraft.getInstance();
+			SystemToast.addOrUpdate(minecraft.gui.toastManager(), BAKED_TOAST, Component.translatable("block.typestones.typewriter"),
+					Component.translatable("gui.typestones.toast.baked", fresh[0], settings.fontName(), settings.size()));
+		}
 		return hashes;
 	}
 
@@ -329,6 +344,7 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		super.extractBackground(graphics, mouseX, mouseY, a);
 		graphics.blit(RenderPipelines.GUI_TEXTURED, BACKGROUND, leftPos, topPos, 0.0F, 0.0F, imageWidth, imageHeight, 256, 256);
 		extractFontPanel(graphics);
+		extractMessageLine(graphics);
 	}
 
 	private void extractFontPanel(GuiGraphicsExtractor graphics) {
@@ -362,11 +378,45 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		}
 		String label = new String(Character.toChars(c)) + String.format("  U+%04X", c);
 		graphics.centeredText(font, label, px + PANEL_WIDTH / 2, by + PREVIEW + 4, 0xFF404040);
-		if (!settings.isClassic() && !LetterBaker.has(settings.font())) {
-			graphics.centeredText(font, Component.translatable("gui.typestones.font_missing"), px + PANEL_WIDTH / 2, by + PREVIEW + 14, 0xFF802020);
-		} else if (!settings.isClassic() && !LetterBaker.canDisplay(settings.font(), c)) {
-			graphics.centeredText(font, Component.translatable("gui.typestones.font_lacks"), px + PANEL_WIDTH / 2, by + PREVIEW + 14, 0xFF802020);
+	}
+
+	/** What the message line says now, or null. */
+	private @Nullable Component message() {
+		if (settings.isClassic()) {
+			return null;
 		}
+		if (!LetterBaker.has(settings.font())) {
+			return Component.translatable("gui.typestones.font_missing", settings.font());
+		}
+		int c = previewChar();
+		if (!LetterBaker.canDisplay(settings.font(), c)) {
+			return Component.translatable("gui.typestones.font_lacks", settings.font(), String.format("U+%04X", c));
+		}
+		return null;
+	}
+
+	/** A line under both panels; a message wider than the line scrolls through it like a ticker. */
+	private void extractMessageLine(GuiGraphicsExtractor graphics) {
+		Component message = message();
+		if (message == null) {
+			return;
+		}
+		int x0 = leftPos;
+		int x1 = panelX() + PANEL_WIDTH;
+		int y = topPos + imageHeight + MESSAGE_GAP;
+		graphics.fill(x0, y, x1, y + MESSAGE_HEIGHT, 0xC0000000);
+		int room = x1 - x0 - 8;
+		int textWidth = font.width(message);
+		if (textWidth <= room) {
+			graphics.centeredText(font, message, (x0 + x1) / 2, y + 2, 0xFFFF6060);
+			return;
+		}
+		int loop = textWidth + 40;
+		int offset = (int) (Util.getMillis() / 25 % loop);
+		graphics.enableScissor(x0 + 4, y, x1 - 4, y + MESSAGE_HEIGHT);
+		graphics.text(font, message, x0 + 4 - offset, y + 2, 0xFFFF6060, false);
+		graphics.text(font, message, x0 + 4 - offset + loop, y + 2, 0xFFFF6060, false);
+		graphics.disableScissor();
 	}
 
 	private String fontName() {
