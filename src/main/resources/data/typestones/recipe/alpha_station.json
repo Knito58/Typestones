@@ -1,0 +1,19 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"category": "redstone",
+	"key": {
+		"S": "minecraft:smooth_stone",
+		"R": "minecraft:redstone",
+		"C": "minecraft:crafting_table",
+		"D": "minecraft:dropper"
+	},
+	"pattern": [
+		"SSS",
+		"RCR",
+		"SDS"
+	],
+	"result": {
+		"id": "typestones:alpha_station",
+		"count": 1
+	}
+}

@@ -1,17 +1,19 @@
 package de.knito.typestones.client;
 
+import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.world.level.block.Block;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.BlockColorRegistry;
 
 import de.knito.typestones.ModBlocks;
+import de.knito.typestones.ModStation;
 import de.knito.typestones.Typestones;
 import de.knito.typestones.block.Dyes;
 import de.knito.typestones.client.mixin.ItemTintSourcesAccessor;
 
 /**
- * Client entrypoint: colors the placed blocks and the items.
+ * Client entrypoint: colors the placed blocks and the items, and opens the Alpha Station screen.
  */
 public class TypestonesClient implements ClientModInitializer {
 	@Override
@@ -25,5 +27,7 @@ public class TypestonesClient implements ClientModInitializer {
 		}, ModBlocks.TYPESTONES.values().toArray(Block[]::new));
 
 		ItemTintSourcesAccessor.typestones$idMapper().put(Typestones.id("dye"), DyeTint.MAP_CODEC);
+
+		MenuScreens.register(ModStation.MENU, AlphaStationScreen::new);
 	}
 }
