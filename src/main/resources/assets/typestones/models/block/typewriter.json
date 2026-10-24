@@ -1,0 +1,12 @@
+{
+	"parent": "minecraft:block/cube",
+	"textures": {
+		"particle": "typestones:block/typewriter_front",
+		"north": "typestones:block/typewriter_front",
+		"south": "typestones:block/typewriter_back",
+		"east": "typestones:block/typewriter_side",
+		"west": "typestones:block/typewriter_side",
+		"up": "typestones:block/typewriter_top",
+		"down": "typestones:block/typewriter_bottom"
+	}
+}

@@ -1,4 +1,4 @@
-package de.knito.typestones.station;
+package de.knito.typestones.typewriter;
 
 import io.netty.buffer.ByteBuf;
 
@@ -18,14 +18,14 @@ import net.minecraft.world.item.ItemStack;
 
 import org.jspecify.annotations.Nullable;
 
-import de.knito.typestones.ModStation;
+import de.knito.typestones.ModTypewriter;
 
-public class AlphaStationMenu extends AbstractContainerMenu {
+public class TypewriterMenu extends AbstractContainerMenu {
 	/** Sent to the client when the screen opens. */
 	public record OpenData(BlockPos pos, String text) {
 		public static final StreamCodec<ByteBuf, OpenData> STREAM_CODEC = StreamCodec.composite(
 				BlockPos.STREAM_CODEC, OpenData::pos,
-				ByteBufCodecs.stringUtf8(AlphaStationBlockEntity.MAX_TEXT_LENGTH * 4), OpenData::text,
+				ByteBufCodecs.stringUtf8(TypewriterBlockEntity.MAX_TEXT_LENGTH * 4), OpenData::text,
 				OpenData::new
 		);
 	}
@@ -39,29 +39,29 @@ public class AlphaStationMenu extends AbstractContainerMenu {
 	private final ContainerData data;
 	private final String initialText;
 	/** Only set on the server. */
-	private final @Nullable AlphaStationBlockEntity station;
+	private final @Nullable TypewriterBlockEntity typewriter;
 
 	/** Client side. */
-	public AlphaStationMenu(int containerId, Inventory inventory, OpenData openData) {
+	public TypewriterMenu(int containerId, Inventory inventory, OpenData openData) {
 		this(containerId, inventory, new SimpleContainer(2), new SimpleContainerData(4), null, openData.text());
 	}
 
 	/** Server side. */
-	public AlphaStationMenu(int containerId, Inventory inventory, Container dyeSamples, ContainerData data, AlphaStationBlockEntity station) {
-		this(containerId, inventory, dyeSamples, data, station, "");
+	public TypewriterMenu(int containerId, Inventory inventory, Container dyeSamples, ContainerData data, TypewriterBlockEntity typewriter) {
+		this(containerId, inventory, dyeSamples, data, typewriter, "");
 	}
 
-	private AlphaStationMenu(int containerId, Inventory inventory, Container dyeSamples, ContainerData data,
-			@Nullable AlphaStationBlockEntity station, String initialText) {
-		super(ModStation.MENU, containerId);
+	private TypewriterMenu(int containerId, Inventory inventory, Container dyeSamples, ContainerData data,
+			@Nullable TypewriterBlockEntity typewriter, String initialText) {
+		super(ModTypewriter.MENU, containerId);
 		checkContainerSize(dyeSamples, 2);
 		checkContainerDataCount(data, 4);
 		this.dyeSamples = dyeSamples;
 		this.data = data;
-		this.station = station;
+		this.typewriter = typewriter;
 		this.initialText = initialText;
-		addSlot(new SampleSlot(dyeSamples, AlphaStationBlockEntity.SLOT_LETTER, LETTER_X, DYES_Y));
-		addSlot(new SampleSlot(dyeSamples, AlphaStationBlockEntity.SLOT_BACKGROUND, BACKGROUND_X, DYES_Y));
+		addSlot(new SampleSlot(dyeSamples, TypewriterBlockEntity.SLOT_LETTER, LETTER_X, DYES_Y));
+		addSlot(new SampleSlot(dyeSamples, TypewriterBlockEntity.SLOT_BACKGROUND, BACKGROUND_X, DYES_Y));
 		addStandardInventorySlots(inventory, 8, INVENTORY_Y);
 		addDataSlots(data);
 	}
@@ -83,16 +83,16 @@ public class AlphaStationMenu extends AbstractContainerMenu {
 		}
 	}
 
-	public @Nullable AlphaStationBlockEntity station() {
-		return station;
+	public @Nullable TypewriterBlockEntity typewriter() {
+		return typewriter;
 	}
 
 	public String initialText() {
 		return initialText;
 	}
 
-	public StationStatus status() {
-		return StationStatus.of(data.get(0));
+	public TypewriterStatus status() {
+		return TypewriterStatus.of(data.get(0));
 	}
 
 	public int made() {
@@ -114,14 +114,14 @@ public class AlphaStationMenu extends AbstractContainerMenu {
 
 	/** A dye sets the sample, anything else clears it. The background may stay empty: plain smooth stone. */
 	private void setSample(int slot, ItemStack stack) {
-		ItemStack sample = AlphaStationBlockEntity.dyeOf(stack).map(c -> new ItemStack(AlphaStationBlockEntity.dyeItem(c))).orElse(ItemStack.EMPTY);
+		ItemStack sample = TypewriterBlockEntity.dyeOf(stack).map(c -> new ItemStack(TypewriterBlockEntity.dyeItem(c))).orElse(ItemStack.EMPTY);
 		dyeSamples.setItem(slot, sample);
 		dyeSamples.setChanged();
 	}
 
 	@Override
 	public void clicked(int slotIndex, int button, ContainerInput input, Player player) {
-		if (slotIndex != AlphaStationBlockEntity.SLOT_LETTER && slotIndex != AlphaStationBlockEntity.SLOT_BACKGROUND) {
+		if (slotIndex != TypewriterBlockEntity.SLOT_LETTER && slotIndex != TypewriterBlockEntity.SLOT_BACKGROUND) {
 			super.clicked(slotIndex, button, input, player);
 			return;
 		}
@@ -137,16 +137,16 @@ public class AlphaStationMenu extends AbstractContainerMenu {
 
 	@Override
 	public boolean canDragTo(Slot slot) {
-		return slot.index > AlphaStationBlockEntity.SLOT_BACKGROUND && super.canDragTo(slot);
+		return slot.index > TypewriterBlockEntity.SLOT_BACKGROUND && super.canDragTo(slot);
 	}
 
 	/** Shift-click on a dye in the inventory sets the letter dye; the stack stays where it is. */
 	@Override
 	public ItemStack quickMoveStack(Player player, int slotIndex) {
 		Slot slot = slots.get(slotIndex);
-		if (slotIndex > AlphaStationBlockEntity.SLOT_BACKGROUND && slot.hasItem()
-				&& AlphaStationBlockEntity.dyeOf(slot.getItem()).isPresent()) {
-			setSample(AlphaStationBlockEntity.SLOT_LETTER, slot.getItem());
+		if (slotIndex > TypewriterBlockEntity.SLOT_BACKGROUND && slot.hasItem()
+				&& TypewriterBlockEntity.dyeOf(slot.getItem()).isPresent()) {
+			setSample(TypewriterBlockEntity.SLOT_LETTER, slot.getItem());
 		}
 		return ItemStack.EMPTY;
 	}

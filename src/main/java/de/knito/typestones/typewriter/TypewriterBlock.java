@@ -1,4 +1,4 @@
-package de.knito.typestones.station;
+package de.knito.typestones.typewriter;
 
 import org.jspecify.annotations.Nullable;
 
@@ -23,16 +23,16 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 
-import de.knito.typestones.ModStation;
+import de.knito.typestones.ModTypewriter;
 
 /**
- * The Alpha Station. Its front (with the screen) faces the player who placed it; finished Typestones
+ * The Typewriter. Its front (with the screen) faces the player who placed it; finished Typestones
  * go out of the back, materials come in from the other five sides.
  */
-public class AlphaStationBlock extends BaseEntityBlock {
+public class TypewriterBlock extends BaseEntityBlock {
 	public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
 
-	public AlphaStationBlock(Properties properties) {
+	public TypewriterBlock(Properties properties) {
 		super(properties);
 		registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
 	}
@@ -64,19 +64,19 @@ public class AlphaStationBlock extends BaseEntityBlock {
 
 	@Override
 	protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-		if (!level.isClientSide() && level.getBlockEntity(pos) instanceof AlphaStationBlockEntity station) {
-			player.openMenu(station);
+		if (!level.isClientSide() && level.getBlockEntity(pos) instanceof TypewriterBlockEntity typewriter) {
+			player.openMenu(typewriter);
 		}
 		return InteractionResult.SUCCESS;
 	}
 
 	@Override
 	public <T extends BlockEntity> @Nullable BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-		return level instanceof ServerLevel ? createTickerHelper(type, ModStation.ENTITY, AlphaStationBlockEntity::serverTick) : null;
+		return level instanceof ServerLevel ? createTickerHelper(type, ModTypewriter.ENTITY, TypewriterBlockEntity::serverTick) : null;
 	}
 
 	@Override
 	public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-		return new AlphaStationBlockEntity(pos, state);
+		return new TypewriterBlockEntity(pos, state);
 	}
 }

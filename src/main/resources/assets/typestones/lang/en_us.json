@@ -1,7 +1,7 @@
 {
 	"block.typestones.typestone": "Typestone",
 	"item.typestones.typestone.with_glyph": "%s \"%s\"",
-	"block.typestones.alpha_station": "Alpha Station",
+	"block.typestones.typewriter": "Typewriter",
 	"gui.typestones.text": "Text",
 	"gui.typestones.text_hint": "Type the text for the blocks",
 	"gui.typestones.preset_letters": "A–Z",

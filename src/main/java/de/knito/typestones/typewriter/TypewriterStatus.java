@@ -1,9 +1,9 @@
-package de.knito.typestones.station;
+package de.knito.typestones.typewriter;
 
 import net.minecraft.network.chat.Component;
 
-/** What the Alpha Station is doing, shown in its screen. */
-public enum StationStatus {
+/** What the Typewriter is doing, shown in its screen. */
+public enum TypewriterStatus {
 	IDLE(0xFF404040),
 	RUNNING(0xFF207020),
 	DONE(0xFF207020),
@@ -17,7 +17,7 @@ public enum StationStatus {
 
 	public final int color;
 
-	StationStatus(int color) {
+	TypewriterStatus(int color) {
 		this.color = color;
 	}
 
@@ -25,7 +25,7 @@ public enum StationStatus {
 		return Component.translatable("gui.typestones.status." + name().toLowerCase());
 	}
 
-	public static StationStatus of(int ordinal) {
+	public static TypewriterStatus of(int ordinal) {
 		return values()[Math.clamp(ordinal, 0, values().length - 1)];
 	}
 }

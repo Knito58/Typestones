@@ -16,22 +16,22 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
 import de.knito.typestones.Typestones;
 import de.knito.typestones.glyph.GlyphSet;
-import de.knito.typestones.station.AlphaStationBlockEntity;
-import de.knito.typestones.station.AlphaStationMenu;
-import de.knito.typestones.station.StationActionPayload;
-import de.knito.typestones.station.StationStatus;
+import de.knito.typestones.typewriter.TypewriterBlockEntity;
+import de.knito.typestones.typewriter.TypewriterMenu;
+import de.knito.typestones.typewriter.TypewriterActionPayload;
+import de.knito.typestones.typewriter.TypewriterStatus;
 
-public class AlphaStationScreen extends AbstractContainerScreen<AlphaStationMenu> {
-	private static final Identifier BACKGROUND = Typestones.id("textures/gui/alpha_station.png");
+public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
+	private static final Identifier BACKGROUND = Typestones.id("textures/gui/typewriter.png");
 	private static final int STATUS_Y = 110;
 
 	private EditBox textBox;
-	/** -1 until the player changes it: then the screen shows what the station has stored. */
+	/** -1 until the player changes it: then the screen shows what the typewriter has stored. */
 	private int repeat = -1;
 
-	public AlphaStationScreen(AlphaStationMenu menu, Inventory inventory, Component title) {
+	public TypewriterScreen(TypewriterMenu menu, Inventory inventory, Component title) {
 		super(menu, inventory, title, 176, 212);
-		this.inventoryLabelY = AlphaStationMenu.INVENTORY_Y - 11;
+		this.inventoryLabelY = TypewriterMenu.INVENTORY_Y - 11;
 	}
 
 	@Override
@@ -40,7 +40,7 @@ public class AlphaStationScreen extends AbstractContainerScreen<AlphaStationMenu
 		String oldText = textBox != null ? textBox.getValue() : menu.initialText();
 
 		textBox = new EditBox(font, leftPos + 8, topPos + 18, 160, 18, Component.translatable("gui.typestones.text"));
-		textBox.setMaxLength(AlphaStationBlockEntity.MAX_TEXT_LENGTH);
+		textBox.setMaxLength(TypewriterBlockEntity.MAX_TEXT_LENGTH);
 		textBox.setHint(Component.translatable("gui.typestones.text_hint"));
 		textBox.setValue(oldText);
 		addRenderableWidget(textBox);
@@ -59,9 +59,9 @@ public class AlphaStationScreen extends AbstractContainerScreen<AlphaStationMenu
 		addRenderableWidget(Button.builder(Component.literal("+"), b -> changeRepeat(1))
 				.bounds(leftPos + 152, topPos + 64, 16, 18).build());
 
-		addRenderableWidget(Button.builder(Component.translatable("gui.typestones.start"), b -> send(StationActionPayload.Action.START))
+		addRenderableWidget(Button.builder(Component.translatable("gui.typestones.start"), b -> send(TypewriterActionPayload.Action.START))
 				.bounds(leftPos + 8, topPos + 88, 50, 18).build());
-		addRenderableWidget(Button.builder(Component.translatable("gui.typestones.stop"), b -> send(StationActionPayload.Action.STOP))
+		addRenderableWidget(Button.builder(Component.translatable("gui.typestones.stop"), b -> send(TypewriterActionPayload.Action.STOP))
 				.bounds(leftPos + 63, topPos + 88, 50, 18).build());
 	}
 
@@ -72,27 +72,27 @@ public class AlphaStationScreen extends AbstractContainerScreen<AlphaStationMenu
 
 	private void preset(String text) {
 		textBox.setValue(text);
-		send(StationActionPayload.Action.SAVE);
+		send(TypewriterActionPayload.Action.SAVE);
 	}
 
 	private int currentRepeat() {
-		return repeat < 0 ? Math.clamp(menu.repeat(), 1, AlphaStationBlockEntity.MAX_REPEAT) : repeat;
+		return repeat < 0 ? Math.clamp(menu.repeat(), 1, TypewriterBlockEntity.MAX_REPEAT) : repeat;
 	}
 
 	/** Shift steps by 10. */
 	private void changeRepeat(int delta) {
 		int step = Minecraft.getInstance().hasShiftDown() ? 10 : 1;
-		repeat = Math.clamp(currentRepeat() + delta * step, 1, AlphaStationBlockEntity.MAX_REPEAT);
-		send(StationActionPayload.Action.SAVE);
+		repeat = Math.clamp(currentRepeat() + delta * step, 1, TypewriterBlockEntity.MAX_REPEAT);
+		send(TypewriterActionPayload.Action.SAVE);
 	}
 
-	/** Characters a Typestone can't show are dropped here, so the box shows what the station will make. */
-	private void send(StationActionPayload.Action action) {
-		String text = AlphaStationBlockEntity.cleanText(textBox.getValue());
+	/** Characters a Typestone can't show are dropped here, so the box shows what the typewriter will make. */
+	private void send(TypewriterActionPayload.Action action) {
+		String text = TypewriterBlockEntity.cleanText(textBox.getValue());
 		if (!text.equals(textBox.getValue())) {
 			textBox.setValue(text);
 		}
-		ClientPlayNetworking.send(new StationActionPayload(action, text, currentRepeat()));
+		ClientPlayNetworking.send(new TypewriterActionPayload(action, text, currentRepeat()));
 	}
 
 	@Override
@@ -110,7 +110,7 @@ public class AlphaStationScreen extends AbstractContainerScreen<AlphaStationMenu
 	@Override
 	public void onClose() {
 		// Keep what was typed even if no button was pressed; must go out before the menu closes on the server.
-		send(StationActionPayload.Action.SAVE);
+		send(TypewriterActionPayload.Action.SAVE);
 		super.onClose();
 	}
 
@@ -128,15 +128,15 @@ public class AlphaStationScreen extends AbstractContainerScreen<AlphaStationMenu
 			Component progress = Component.translatable("gui.typestones.progress", menu.made(), menu.total());
 			graphics.text(font, progress, imageWidth - 8 - font.width(progress), 93, 0xFF404040, false);
 		}
-		StationStatus status = menu.status();
+		TypewriterStatus status = menu.status();
 		graphics.text(font, status.describe(), 8, STATUS_Y, status.color, false);
 	}
 
 	@Override
 	protected void extractSlot(GuiGraphicsExtractor graphics, Slot slot, int mouseX, int mouseY) {
 		super.extractSlot(graphics, slot, mouseX, mouseY);
-		// Fade the dye samples like ghosts, so they don't look like real items in the station.
-		if (slot.index <= AlphaStationBlockEntity.SLOT_BACKGROUND && slot.hasItem()) {
+		// Fade the dye samples like ghosts, so they don't look like real items in the typewriter.
+		if (slot.index <= TypewriterBlockEntity.SLOT_BACKGROUND && slot.hasItem()) {
 			graphics.nextStratum();
 			graphics.fill(slot.x, slot.y, slot.x + 16, slot.y + 16, 0x808B8B8B);
 		}
@@ -145,9 +145,9 @@ public class AlphaStationScreen extends AbstractContainerScreen<AlphaStationMenu
 	@Override
 	protected void extractTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
 		super.extractTooltip(graphics, mouseX, mouseY);
-		if (hoveredSlot != null && hoveredSlot.index <= AlphaStationBlockEntity.SLOT_BACKGROUND && !hoveredSlot.hasItem()
+		if (hoveredSlot != null && hoveredSlot.index <= TypewriterBlockEntity.SLOT_BACKGROUND && !hoveredSlot.hasItem()
 				&& menu.getCarried().isEmpty()) {
-			String key = hoveredSlot.index == AlphaStationBlockEntity.SLOT_LETTER ? "gui.typestones.slot_letter" : "gui.typestones.slot_background";
+			String key = hoveredSlot.index == TypewriterBlockEntity.SLOT_LETTER ? "gui.typestones.slot_letter" : "gui.typestones.slot_background";
 			graphics.setTooltipForNextFrame(Component.translatable(key), mouseX, mouseY);
 		}
 	}

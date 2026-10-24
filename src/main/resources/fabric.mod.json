@@ -3,7 +3,7 @@
 	"id": "typestones",
 	"version": "${version}",
 	"name": "Typestones",
-	"description": "Smooth stone blocks that carry a letter on all six sides in two dye colors, made by the Alpha Station from a typed line of text.",
+	"description": "Smooth stone blocks that carry a letter on all six sides in two dye colors, made by the Typewriter from a typed line of text.",
 	"authors": [
 		"Claude",
 		"Konitor"

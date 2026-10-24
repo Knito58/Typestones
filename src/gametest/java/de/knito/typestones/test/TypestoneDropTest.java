@@ -62,12 +62,12 @@ public class TypestoneDropTest {
 		helper.succeed();
 	}
 
-	/** The station's recipe must load; the game skips a recipe file it can't read. */
+	/** The typewriter's recipe must load; the game skips a recipe file it can't read. */
 	@GameTest
-	public void stationRecipeLoads(GameTestHelper helper) {
+	public void typewriterRecipeLoads(GameTestHelper helper) {
 		var key = net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.RECIPE,
-				de.knito.typestones.Typestones.id("alpha_station"));
-		helper.assertTrue(helper.getLevel().recipeAccess().byKey(key).isPresent(), "The Alpha Station recipe did not load");
+				de.knito.typestones.Typestones.id("typewriter"));
+		helper.assertTrue(helper.getLevel().recipeAccess().byKey(key).isPresent(), "The Typewriter recipe did not load");
 		helper.succeed();
 	}
 }

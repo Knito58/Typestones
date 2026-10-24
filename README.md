@@ -1,14 +1,14 @@
 # Typestones
 
 Fabric mod for Minecraft 26.3: smooth stone blocks that carry a letter on all six sides, in two dye
-colors (letter and optional background). The Alpha Station makes them from a typed line of text.
+colors (letter and optional background). The Typewriter makes them from a typed line of text.
 
 Work in progress. Planned for the first version:
 
 - **Typestone blocks** with the character set of Billboard Engine (A–Z, a–z, 0–9, punctuation,
   Ä Ö Ü ä ö ü ß, ° · €). Top and bottom follow the placement direction, so text on floors and
   ceilings reads correctly. A broken block drops itself with letter and colors.
-- **Alpha Station**: takes smooth stone and dyes from inventories on any side, makes one block every
+- **Typewriter**: takes smooth stone and dyes from inventories on any side, makes one block every
   5 ticks and puts it into the inventory at its back. Ghost slots for letter and background dye,
   buttons for A–Z, 0–9 and all characters, repeat up to 64 times. A space makes a plain block.
 - No crafting recipes for the letter blocks, so recipe viewers stay clean.
