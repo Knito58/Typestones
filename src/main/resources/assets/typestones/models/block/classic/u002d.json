@@ -1,0 +1,7 @@
+{
+	"parent": "typestones:block/typestone_template",
+	"textures": {
+		"base": "minecraft:block/smooth_stone",
+		"glyph": "typestones:block/glyph/classic/u002d"
+	}
+}

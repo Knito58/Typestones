@@ -7,10 +7,8 @@ import net.fabricmc.api.ModInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.knito.typestones.glyph.GlyphSet;
-
 /**
- * Common entrypoint (runs on client and server). The blocks and the Alpha Station register here.
+ * Common entrypoint (runs on client and server): registers the components and the Typestone blocks.
  */
 public class Typestones implements ModInitializer {
 	public static final String MOD_ID = "typestones";
@@ -22,6 +20,7 @@ public class Typestones implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
-		LOGGER.info("Typestones: {} glyphs", GlyphSet.size());
+		ModComponents.initialize();
+		ModBlocks.initialize();
 	}
 }
