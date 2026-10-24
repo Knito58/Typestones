@@ -9,14 +9,9 @@
 					"name": "typestones:typestone",
 					"modifier": [
 						{
-							"type": "minecraft:copy_state",
-							"block": "typestones:typestone",
-							"properties": ["glyph", "dyed"]
-						},
-						{
 							"type": "minecraft:copy_components",
 							"source": "block_entity",
-							"include": ["typestones:dyes"]
+							"include": ["typestones:letter", "typestones:dyes"]
 						}
 					]
 				}

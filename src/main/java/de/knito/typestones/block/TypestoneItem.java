@@ -1,48 +1,49 @@
 package de.knito.typestones.block;
 
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.BlockItemStateProperties;
 import net.minecraft.world.level.block.Block;
 
 import de.knito.typestones.ModComponents;
-import de.knito.typestones.glyph.GlyphSet;
+import de.knito.typestones.letter.Letters;
 
 /**
- * The Typestone item. Its glyph is in the vanilla block_state component, which also places the block
- * with that glyph; its dyes are in the typestones:dyes component.
+ * The Typestone item. Its letter is in the typestones:letter component and its dyes are in the
+ * typestones:dyes component; the plain stone has neither, so all plain stones stack.
  */
 public class TypestoneItem extends BlockItem {
 	public TypestoneItem(Block block, Properties properties) {
 		super(block, properties);
 	}
 
-	/** A Typestone with the given glyph (index into {@link GlyphSet}) and dyes. */
-	public ItemStack stack(int glyph, Dyes dyes, int count) {
+	/** A Typestone with the given letter hash ({@link Letters#NONE} for none) and dyes. */
+	public ItemStack stack(String letter, Dyes dyes, int count) {
 		ItemStack stack = new ItemStack(this, count);
-		stack.set(DataComponents.BLOCK_STATE, BlockItemStateProperties.EMPTY
-				.with(TypestoneBlock.GLYPH, glyph)
-				.with(TypestoneBlock.DYED, dyes.dyed()));
-		stack.set(ModComponents.DYES, dyes);
+		if (!letter.equals(Letters.NONE)) {
+			stack.set(ModComponents.LETTER, letter);
+		}
+		if (!dyes.equals(Dyes.DEFAULT)) {
+			stack.set(ModComponents.DYES, dyes);
+		}
 		return stack;
 	}
 
-	public static int glyph(ItemStack stack) {
-		BlockItemStateProperties state = stack.getOrDefault(DataComponents.BLOCK_STATE, BlockItemStateProperties.EMPTY);
-		Integer glyph = state.get(TypestoneBlock.GLYPH);
-		return glyph == null ? 0 : glyph;
+	public static String letter(ItemStack stack) {
+		return stack.getOrDefault(ModComponents.LETTER, Letters.NONE);
 	}
 
-	/** "Typestone "A"", or just "Typestone" for the plain block. */
+	public static Dyes dyes(ItemStack stack) {
+		return stack.getOrDefault(ModComponents.DYES, Dyes.DEFAULT);
+	}
+
+	/** "Typestone "A"", or just "Typestone" for the plain block and unknown letters. */
 	@Override
 	public Component getName(ItemStack stack) {
-		int glyph = glyph(stack);
-		if (glyph <= 0 || glyph >= GlyphSet.size()) {
+		String text = Letters.text(letter(stack));
+		if (text.isEmpty()) {
 			return super.getName(stack);
 		}
-		return Component.translatable("item.typestones.typestone.with_glyph", super.getName(stack),
-				String.valueOf(GlyphSet.charAt(glyph)));
+		return Component.translatable("item.typestones.typestone.with_glyph", super.getName(stack), text);
 	}
 }

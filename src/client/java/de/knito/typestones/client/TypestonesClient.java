@@ -1,32 +1,24 @@
 package de.knito.typestones.client;
 
 import net.minecraft.client.gui.screens.MenuScreens;
-import net.minecraft.world.level.block.Block;
 
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.rendering.v1.BlockColorRegistry;
+import net.fabricmc.fabric.api.client.model.loading.v1.CustomUnbakedBlockStateModel;
 
-import de.knito.typestones.ModBlocks;
 import de.knito.typestones.ModTypewriter;
 import de.knito.typestones.Typestones;
-import de.knito.typestones.block.Dyes;
-import de.knito.typestones.client.mixin.ItemTintSourcesAccessor;
+import de.knito.typestones.client.mixin.ItemModelsAccessor;
+import de.knito.typestones.client.model.TypestoneBlockModel;
+import de.knito.typestones.client.model.TypestoneItemModel;
 
 /**
- * Client entrypoint: colors the placed blocks and the items, and opens the Typewriter screen.
+ * Client entrypoint: registers the models that draw the letters, and opens the Typewriter screen.
  */
 public class TypestonesClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
-		// Tint 0 is the glyph, tint 1 the white background (only the dyed models use it).
-		BlockColorRegistry.register((state, level, pos, tints) -> {
-			Dyes dyes = level.getBlockEntityRenderData(pos) instanceof Dyes d ? d : Dyes.DEFAULT;
-			tints.size(2);
-			tints.set(0, dyes.letterTint());
-			tints.set(1, dyes.backgroundTint());
-		}, ModBlocks.TYPESTONES.values().toArray(Block[]::new));
-
-		ItemTintSourcesAccessor.typestones$idMapper().put(Typestones.id("dye"), DyeTint.MAP_CODEC);
+		CustomUnbakedBlockStateModel.register(Typestones.id("typestone"), TypestoneBlockModel.Unbaked.CODEC);
+		ItemModelsAccessor.typestones$idMapper().put(Typestones.id("typestone"), TypestoneItemModel.Unbaked.CODEC);
 
 		MenuScreens.register(ModTypewriter.MENU, TypewriterScreen::new);
 	}

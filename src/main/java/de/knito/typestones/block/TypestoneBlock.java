@@ -14,42 +14,29 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
-import net.minecraft.world.level.block.state.properties.IntegerProperty;
 
-import de.knito.typestones.glyph.GlyphSet;
 
 /**
- * A smooth stone block with a glyph on all six sides. The glyph and the facing live in the block
- * state, so the model is chosen without code; the two dye colors live in the block entity and are
- * applied as tints. FACING is the direction the placing player looked, so on floors and ceilings the
- * top of the letter points away from them and the text reads in the direction they walk.
+ * A smooth stone block with a letter on all six sides. Only the facing is in the block state; the letter
+ * (as a hash, see Letters) and the two dyes live in the block entity, and the client draws the letter
+ * as rectangles. FACING is the direction the placing player looked, so on floors and ceilings the letter
+ * reads from where they stood.
  */
 public class TypestoneBlock extends BaseEntityBlock {
 	public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
-	/** Index into {@link GlyphSet}; 0 is the space, a plain block. */
-	public static final IntegerProperty GLYPH = IntegerProperty.create("glyph", 0, GlyphSet.size() - 1);
-	/** Whether there is a background dye; picks the white, tintable background texture. */
-	public static final BooleanProperty DYED = BooleanProperty.create("dyed");
 
-	public final FontFace face;
-
-	public TypestoneBlock(FontFace face, Properties properties) {
+	public TypestoneBlock(Properties properties) {
 		super(properties);
-		this.face = face;
-		registerDefaultState(stateDefinition.any()
-				.setValue(FACING, Direction.NORTH)
-				.setValue(GLYPH, 0)
-				.setValue(DYED, false));
+		registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
 	}
 
 	@Override
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-		builder.add(FACING, GLYPH, DYED);
+		builder.add(FACING);
 	}
 
-	/** Glyph and dyed come from the item's block_state component; only the facing is decided here. */
+	/** Letter and dyes come from the item's components through the block entity. */
 	@Override
 	public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
 		return defaultBlockState().setValue(FACING, context.getHorizontalDirection());
