@@ -43,7 +43,7 @@ jobs:
           esc = lambda t: t.replace("%", "%25").replace("\r", "").replace("\n", "%0A")
           for i, l in enumerate(lines):
               if re.search(r"(dropKeepsLetterAndDyes|typestonedroptest|GameTest).*(fail|Fail|FAIL)|The drop |Expected \d+ drop", l):
-                  print("::error title=Game test::" + esc(l.strip()[:900]))
+                  print("::error title=Game test::" + esc(l.strip()[:8000]))
               if l.startswith("* What went wrong:"):
                   print("::error title=Gradle::" + esc("\n".join(lines[i + 1:i + 10])[:900]))
           PY
