@@ -11,7 +11,7 @@
 	"gui.typestones.repeat": "×%s",
 	"gui.typestones.font": "Font",
 	"gui.typestones.font_filter": "Filter fonts",
-	"gui.typestones.font_classic": "Classic (built in)",
+	"gui.typestones.font_classic": "Classic",
 	"gui.typestones.font_classic_button": "Classic",
 	"gui.typestones.font_lacks": "Font lacks this character",
 	"gui.typestones.font_missing": "Font not on this computer",
