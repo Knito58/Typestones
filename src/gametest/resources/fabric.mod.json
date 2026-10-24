@@ -7,7 +7,8 @@
 	"entrypoints": {
 		"fabric-gametest": [
 			"de.knito.typestones.test.TypestoneDropTest",
-			"de.knito.typestones.test.LetterLibraryTest"
+			"de.knito.typestones.test.LetterLibraryTest",
+			"de.knito.typestones.test.TypewriterFontTest"
 		]
 	},
 	"depends": {
