@@ -46,9 +46,6 @@ public class TypestoneDropTest {
 		String lootInfo = " | loot table " + key + (table == net.minecraft.world.level.storage.loot.LootTable.EMPTY ? " is EMPTY" : " loaded: "
 				+ net.minecraft.world.level.storage.loot.LootTable.DIRECT_CODEC.encodeStart(
 						helper.getLevel().registryAccess().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE), table))
-				+ " | vanilla bee_nest: " + net.minecraft.world.level.storage.loot.LootTable.DIRECT_CODEC.encodeStart(
-						helper.getLevel().registryAccess().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE),
-						helper.getLevel().getServer().reloadableRegistries().getLootTable(net.minecraft.world.level.block.Blocks.BEE_NEST.getLootTable().orElseThrow()))
 				+ " | direct drops " + net.minecraft.world.level.block.Block.getDrops(state, helper.getLevel(), absolute, helper.getLevel().getBlockEntity(absolute))
 				.stream().map(s -> s + " " + s.getComponentsPatch()).toList();
 
@@ -62,6 +59,15 @@ public class TypestoneDropTest {
 				"The drop lost its letter: glyph " + TypestoneItem.glyph(drop) + ", patch " + drop.getComponentsPatch() + lootInfo);
 		helper.assertTrue(dyes.equals(drop.get(ModComponents.DYES)),
 				"The drop lost its dyes: " + drop.get(ModComponents.DYES) + ", patch " + drop.getComponentsPatch() + lootInfo);
+		helper.succeed();
+	}
+
+	/** The station's recipe must load; the game skips a recipe file it can't read. */
+	@GameTest
+	public void stationRecipeLoads(GameTestHelper helper) {
+		var key = net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.RECIPE,
+				de.knito.typestones.Typestones.id("alpha_station"));
+		helper.assertTrue(helper.getLevel().recipeAccess().byKey(key).isPresent(), "The Alpha Station recipe did not load");
 		helper.succeed();
 	}
 }
