@@ -23,5 +23,12 @@
 	"gui.typestones.status.output_full": "Inventory at the back is full",
 	"gui.typestones.status.needs_stone": "Waiting for smooth stone",
 	"gui.typestones.status.needs_letter_dye": "Waiting for letter dye",
-	"gui.typestones.status.needs_background_dye": "Waiting for background dye"
+	"gui.typestones.status.needs_background_dye": "Waiting for background dye",
+	"message.typestones.library_full": "The letter library of this world is full (%s letters). Ask an operator to remove unused letters.",
+	"commands.typestones.letters": "The letter library holds %s of at most %s letters (built-in letters not counted).",
+	"commands.typestones.letter.unknown": "No letter with hash %s.",
+	"commands.typestones.letter.info": "\"%s\" (%s, script %s), font %s at %s×%5$s, language %s, baked by %s on %s, hash %s",
+	"commands.typestones.letter.not_removable": "Can't remove %s: it is built in or not in the library.",
+	"commands.typestones.letter.removed": "Removed letter %s. Stones with it now show as plain.",
+	"commands.typestones.letter.hold": "Hold a Typestone with a letter, or give a hash."
 }

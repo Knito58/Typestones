@@ -23,5 +23,12 @@
 	"gui.typestones.status.output_full": "Inventar an der Rückseite ist voll",
 	"gui.typestones.status.needs_stone": "Wartet auf glatten Stein",
 	"gui.typestones.status.needs_letter_dye": "Wartet auf Buchstabenfarbe",
-	"gui.typestones.status.needs_background_dye": "Wartet auf Hintergrundfarbe"
+	"gui.typestones.status.needs_background_dye": "Wartet auf Hintergrundfarbe",
+	"message.typestones.library_full": "Die Buchstabensammlung dieser Welt ist voll (%s Buchstaben). Ein Operator kann ungenutzte entfernen.",
+	"commands.typestones.letters": "Die Buchstabensammlung enthält %s von höchstens %s Buchstaben (eingebaute nicht gezählt).",
+	"commands.typestones.letter.unknown": "Kein Buchstabe mit Hash %s.",
+	"commands.typestones.letter.info": "„%s“ (%s, Schrift %s), Schriftart %s in %s×%5$s, Sprache %s, gebacken von %s am %s, Hash %s",
+	"commands.typestones.letter.not_removable": "%s kann nicht entfernt werden: eingebaut oder nicht in der Sammlung.",
+	"commands.typestones.letter.removed": "Buchstabe %s entfernt. Steine damit erscheinen jetzt ohne Buchstaben.",
+	"commands.typestones.letter.hold": "Einen Typestone mit Buchstaben in die Hand nehmen oder einen Hash angeben."
 }

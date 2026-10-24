@@ -10,15 +10,19 @@ import de.knito.typestones.Typestones;
 import de.knito.typestones.client.mixin.ItemModelsAccessor;
 import de.knito.typestones.client.model.TypestoneBlockModel;
 import de.knito.typestones.client.model.TypestoneItemModel;
+import de.knito.typestones.client.network.LetterSync;
 
 /**
- * Client entrypoint: registers the models that draw the letters, and opens the Typewriter screen.
+ * Client entrypoint: registers the models that draw the letters, fetches unknown letters from the
+ * server, and opens the Typewriter screen.
  */
 public class TypestonesClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		CustomUnbakedBlockStateModel.register(Typestones.id("typestone"), TypestoneBlockModel.Unbaked.CODEC);
 		ItemModelsAccessor.typestones$idMapper().put(Typestones.id("typestone"), TypestoneItemModel.Unbaked.CODEC);
+
+		LetterSync.initialize();
 
 		MenuScreens.register(ModTypewriter.MENU, TypewriterScreen::new);
 	}

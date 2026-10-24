@@ -25,6 +25,8 @@ import net.fabricmc.fabric.api.client.renderer.v1.mesh.QuadEmitter;
 import de.knito.typestones.Typestones;
 import de.knito.typestones.block.Look;
 import de.knito.typestones.block.TypestoneBlock;
+import de.knito.typestones.client.network.LetterSync;
+import de.knito.typestones.letter.Letters;
 
 /**
  * The placed Typestone. It has no fixed quads: each time the chunk is meshed it draws the letter and
@@ -47,6 +49,10 @@ public class TypestoneBlockModel implements BlockStateModel {
 	public void emitQuads(QuadEmitter emitter, BlockAndTintGetter level, BlockPos pos, BlockState state, RandomSource random,
 			Predicate<@Nullable Direction> cullTest) {
 		Look look = level.getBlockEntityRenderData(pos) instanceof Look l ? l : Look.PLAIN;
+		if (!look.letter().equals(Letters.NONE) && Letters.get(look.letter()) == null) {
+			// Drawn plain for now; redrawn when the server sent the letter.
+			LetterSync.waitFor(look.letter(), pos);
+		}
 		TypestoneMesh.emit(emitter, look, state.getValue(TypestoneBlock.FACING), cullTest, true, stone, flat);
 	}
 
