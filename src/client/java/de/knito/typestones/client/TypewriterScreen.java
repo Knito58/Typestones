@@ -121,6 +121,8 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		fontButtons.add(Button.builder(Component.literal("-"), b -> changeBaseline(-1)).bounds(px + 6, topPos + 100, 16, 18).build());
 		fontButtons.add(Button.builder(Component.literal("+"), b -> changeBaseline(1)).bounds(px + PANEL_WIDTH - 22, topPos + 100, 16, 18).build());
 		fontButtons.forEach(this::addRenderableWidget);
+		addRenderableWidget(Button.builder(Component.literal("<"), b -> previewIndex--)
+				.bounds(px + 6, topPos + PREVIEW_Y + PREVIEW / 2 - 9, 16, 18).build());
 		addRenderableWidget(Button.builder(Component.literal(">"), b -> previewIndex++)
 				.bounds(px + PANEL_WIDTH - 22, topPos + PREVIEW_Y + PREVIEW / 2 - 9, 16, 18).build());
 		updateFontButtons();
