@@ -43,7 +43,9 @@ public class TypestoneDropTest {
 		// Diagnostics: which loot table the block uses and what the server made of it
 		var key = state.getBlock().getLootTable().orElseThrow();
 		var table = helper.getLevel().getServer().reloadableRegistries().getLootTable(key);
-		String lootInfo = " | loot table " + key + (table == net.minecraft.world.level.storage.loot.LootTable.EMPTY ? " is EMPTY" : " loaded")
+		String lootInfo = " | loot table " + key + (table == net.minecraft.world.level.storage.loot.LootTable.EMPTY ? " is EMPTY" : " loaded: "
+				+ net.minecraft.world.level.storage.loot.LootTable.DIRECT_CODEC.encodeStart(
+						helper.getLevel().registryAccess().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE), table))
 				+ " | direct drops " + net.minecraft.world.level.block.Block.getDrops(state, helper.getLevel(), absolute, helper.getLevel().getBlockEntity(absolute))
 				.stream().map(s -> s + " " + s.getComponentsPatch()).toList();
 
