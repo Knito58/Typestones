@@ -108,6 +108,8 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		filterBox.setHint(Component.translatable("gui.typestones.font_filter"));
 		filterBox.setValue(oldFilter);
 		addRenderableWidget(filterBox);
+		addRenderableWidget(Button.builder(Component.translatable("gui.typestones.font_classic_button"), b -> setFont(FontSettings.CLASSIC))
+				.bounds(px + PANEL_WIDTH - 56, topPos + 2, 50, 14).build());
 		addRenderableWidget(Button.builder(Component.literal("<"), b -> changeFont(-1))
 				.bounds(px + 6, topPos + 38, 16, 18).build());
 		addRenderableWidget(Button.builder(Component.literal(">"), b -> changeFont(1))
@@ -180,7 +182,11 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		}
 		int index = choices.indexOf(settings.font());
 		index = index < 0 ? (delta > 0 ? 0 : choices.size() - 1) : Math.floorMod(index + delta, choices.size());
-		settings = settings.withFont(choices.get(index));
+		setFont(choices.get(index));
+	}
+
+	private void setFont(String font) {
+		settings = settings.withFont(font);
 		updateFontButtons();
 		send(TypewriterActionPayload.Action.SAVE);
 	}
