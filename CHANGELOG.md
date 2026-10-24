@@ -13,4 +13,9 @@ First version for Minecraft 26.3 (Fabric). Needed on client and server.
   differ), buttons for A–Z, 0–9 and all characters, repeat up to 64 times.
 - Letters are drawn as flat rectangles in the letter dye, not as textures. A stone stores a hash of
   its letter's pixels, so the game needs no block or texture per character.
+- Letter library per world: letters baked by players are saved with the world, and each player's game
+  fetches a letter from the server the first time it shows a stone with it (limits per player and
+  minute, at most 32,768 letters per world).
+- Commands: `/typestones letters` counts the library, `/typestones letter [hash]` shows a letter's data
+  (without hash: the Typestone in hand), `/typestones letter <hash> remove` (operators) removes one.
 - Characters: the set of Billboard Engine (A–Z, a–z, 0–9, punctuation, Ä Ö Ü ä ö ü ß, ° · €).

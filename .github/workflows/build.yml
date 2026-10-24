@@ -42,8 +42,8 @@ jobs:
           # Failed game tests and Gradle's own summary, so they show up without the job log
           esc = lambda t: t.replace("%", "%25").replace("\r", "").replace("\n", "%0A")
           for i, l in enumerate(lines):
-              if re.search(r"(dropKeepsLetterAndDyes|typestonedroptest|GameTest).*(fail|Fail|FAIL)|The drop |Expected \d+ drop", l):
-                  print("::error title=Game test::" + esc(l.strip()[:8000]))
+              if re.search(r"GameTest.*(fail|Fail|FAIL)|test\.[a-z_]+.*fail|GameTestAssert|Exception|Caused by", l):
+                  print("::error title=Game test::" + esc("\n".join(lines[i:i + 4]).strip()[:8000]))
               if l.startswith("* What went wrong:"):
                   print("::error title=Gradle::" + esc("\n".join(lines[i + 1:i + 10])[:900]))
           PY

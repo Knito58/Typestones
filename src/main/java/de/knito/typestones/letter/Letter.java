@@ -11,7 +11,8 @@ import java.util.List;
 /**
  * A letter as a square of pixels that are ink or not, e.g. 16x16 or 32x32. It is drawn as flat
  * rectangles in the letter dye on the stone faces, so any number of letters works without textures.
- * Immutable; two letters with the same pixels have the same {@link #hash()}.
+ * Immutable; two letters with the same pixels have the same {@link #hash()}. Plain Java on purpose:
+ * GlyphGen uses it without Minecraft on the classpath; the codecs are in {@link LibraryLetter}.
  */
 public final class Letter {
 	public static final int MAX_SIZE = 64;
@@ -54,6 +55,16 @@ public final class Letter {
 
 	public String toHex() {
 		return HexFormat.of().formatHex(bits);
+	}
+
+	/** Reads the form of {@link #toBytes()}; fails on a size the bytes don't fit. */
+	public static Letter fromBytes(int size, byte[] bits) {
+		return new Letter(size, bits.clone());
+	}
+
+	/** The pixels, row by row from the top, one bit per pixel, most significant bit first. */
+	public byte[] toBytes() {
+		return bits.clone();
 	}
 
 	public int size() {

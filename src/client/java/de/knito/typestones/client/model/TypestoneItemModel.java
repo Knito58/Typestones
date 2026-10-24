@@ -26,6 +26,7 @@ import net.minecraft.world.item.ItemStack;
 
 import de.knito.typestones.block.Look;
 import de.knito.typestones.block.TypestoneItem;
+import de.knito.typestones.letter.Letters;
 
 /**
  * The Typestone item: the same cube as the placed block, drawn for the letter and dyes on the stack.
@@ -57,6 +58,8 @@ public class TypestoneItemModel implements ItemModel {
 		// Stacks that look alike may share a cached picture, e.g. in the inventory.
 		output.appendModelIdentityElement(this);
 		output.appendModelIdentityElement(look);
+		// A letter still on its way from the server: draw again once it is there.
+		output.appendModelIdentityElement(Letters.get(look.letter()) != null);
 		ItemStackRenderState.LayerRenderState layer = output.newLayer();
 		layer.setExtents(EXTENTS);
 		layer.setLocalTransform(transformation);
