@@ -47,6 +47,7 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 	private static final int PANEL_WIDTH = 120;
 	private static final int PREVIEW = 64;
 	private static final int PREVIEW_Y = 122;
+	private static final String PREVIEW_SAMPLE = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
 	private EditBox textBox;
 	private EditBox filterBox;
@@ -262,10 +263,13 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		return hashes;
 	}
 
-	/** The character the preview shows: one of the text, or A when there is none. */
+	/** The character the preview shows: one of the text, or of A–Z, a–z, 0–9 while there is no text. */
 	private int previewChar() {
 		int[] chars = textBox.getValue().codePoints().filter(c -> c != ' ').distinct().toArray();
-		return chars.length == 0 ? 'A' : chars[Math.floorMod(previewIndex, chars.length)];
+		if (chars.length == 0) {
+			chars = PREVIEW_SAMPLE.codePoints().toArray();
+		}
+		return chars[Math.floorMod(previewIndex, chars.length)];
 	}
 
 	private @Nullable Letter previewLetter(int c) {
