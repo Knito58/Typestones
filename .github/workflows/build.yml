@@ -22,7 +22,24 @@ jobs:
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
       - name: build
-        run: ./gradlew build
+        run: |
+          set -o pipefail
+          ./gradlew build 2>&1 | tee build.log
+      - name: show compile errors on the pull request
+        if: failure()
+        run: |
+          # javac prints "path:line: error: message" with a few lines of details below it
+          python3 - <<'PY'
+          import os, re
+          ws = os.environ["GITHUB_WORKSPACE"] + "/"
+          lines = open("build.log", encoding="utf-8", errors="replace").read().splitlines()
+          for i, l in enumerate(lines):
+              m = re.match(r"^(/\S+\.java):(\d+): error: (.*)$", l)
+              if m:
+                  details = [d for d in lines[i + 1:i + 4] if not re.match(r"^(/\S+\.java:\d+:|\d+ errors?$)", d)]
+                  msg = "%0A".join([m.group(3)] + details).replace("%", "%25").replace("%250A", "%0A")
+                  print(f"::error file={m.group(1).replace(ws, '')},line={m.group(2)}::{msg}")
+          PY
       - name: start a server to check the mod's data files
         # Recipes, advancements etc. are only checked when a world loads, not by the build.
         run: |
