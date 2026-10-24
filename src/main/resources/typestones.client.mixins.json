@@ -1,0 +1,11 @@
+{
+	"required": true,
+	"package": "de.knito.typestones.client.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"ItemTintSourcesAccessor"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

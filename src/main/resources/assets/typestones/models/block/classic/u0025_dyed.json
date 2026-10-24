@@ -1,0 +1,7 @@
+{
+	"parent": "typestones:block/typestone_template_dyed",
+	"textures": {
+		"base": "typestones:block/dyed_base",
+		"glyph": "typestones:block/glyph/classic/u0025"
+	}
+}

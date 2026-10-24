@@ -31,7 +31,7 @@ dependencies {
 }
 
 // The glyph generator: a small Java program, not part of the mod. It draws the glyph textures of every
-// font face in fonts/. Run "./gradlew generateGlyphs" after changing a face, then commit the textures.
+// font face in fonts/ and writes the JSON files of the Typestone blocks. Run "./gradlew generateGlyphs" after changing a face, then commit the textures.
 // A font from elsewhere, e.g. one installed on the computer:
 //   ./gradlew generateGlyphs -Pfont=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf -Pface=dejavu_bold
 sourceSets {
@@ -42,7 +42,7 @@ sourceSets {
 }
 
 def glyphArgs = [
-	file('src/main/resources/assets/typestones/textures/block/glyph').path,
+	file('src/main/resources').path,
 	layout.buildDirectory.dir('glyph-preview').get().asFile.path,
 	file('fonts').path
 ]
@@ -57,7 +57,7 @@ tasks.register('generateGlyphs', JavaExec) {
 	args glyphArgs + (font.present ? [font.get(), providers.gradleProperty('face').getOrElse('custom')] : [])
 }
 
-// Part of "build": fails when the committed glyph textures don't match fonts/ and the glyph set.
+// Part of "build": fails when the committed glyph textures or block files don't match the generator.
 def checkGlyphs = tasks.register('checkGlyphs', JavaExec) {
 	group = 'verification'
 	description = 'Checks that the glyph textures are up to date.'
