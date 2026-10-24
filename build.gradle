@@ -1,0 +1,118 @@
+plugins {
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+	id 'maven-publish'
+}
+
+loom {
+	splitEnvironmentSourceSets()
+
+	mods {
+		"typestones" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+
+	// Own folder for the dev server, so client and server can run at the same time.
+	runs {
+		server {
+			runDir "run-server"
+		}
+	}
+}
+
+dependencies {
+	// To change the versions see the gradle.properties file
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+	// Fabric API. This is technically optional, but you probably want it anyway.
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+}
+
+// The glyph generator: a small Java program, not part of the mod. It draws the glyph textures of every
+// font face in fonts/. Run "./gradlew generateGlyphs" after changing a face, then commit the textures.
+// A font from elsewhere, e.g. one installed on the computer:
+//   ./gradlew generateGlyphs -Pfont=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf -Pface=dejavu_bold
+sourceSets {
+	glyphgen {
+		compileClasspath += sourceSets.main.output
+		runtimeClasspath += sourceSets.main.output
+	}
+}
+
+def glyphArgs = [
+	file('src/main/resources/assets/typestones/textures/block/glyph').path,
+	layout.buildDirectory.dir('glyph-preview').get().asFile.path,
+	file('fonts').path
+]
+
+tasks.register('generateGlyphs', JavaExec) {
+	group = 'typestones'
+	description = 'Draws the glyph textures of the font faces in fonts/ (or of -Pfont=<file> -Pface=<name>).'
+	classpath = sourceSets.glyphgen.runtimeClasspath
+	mainClass = 'de.knito.typestones.glyphgen.GlyphGen'
+	jvmArgs '-Djava.awt.headless=true'
+	def font = providers.gradleProperty('font')
+	args glyphArgs + (font.present ? [font.get(), providers.gradleProperty('face').getOrElse('custom')] : [])
+}
+
+// Part of "build": fails when the committed glyph textures don't match fonts/ and the glyph set.
+def checkGlyphs = tasks.register('checkGlyphs', JavaExec) {
+	group = 'verification'
+	description = 'Checks that the glyph textures are up to date.'
+	classpath = sourceSets.glyphgen.runtimeClasspath
+	mainClass = 'de.knito.typestones.glyphgen.GlyphGen'
+	jvmArgs '-Djava.awt.headless=true', '-Dglyphgen.check=true'
+	args glyphArgs
+}
+tasks.named('check') { dependsOn checkGlyphs }
+
+processResources {
+	def version = project.version
+	inputs.property "version", version
+
+	filesMatching("fabric.mod.json") {
+		expand "version": version
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+}
+
+java {
+	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
+	// if it is present.
+	// If you remove this line, sources will not be generated.
+	withSourcesJar()
+
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}
+
+jar {
+	def projectName = project.name
+	inputs.property "projectName", projectName
+
+	from("LICENSE") {
+		rename { "${it}_$projectName"}
+	}
+}
+
+// configure the maven publication
+publishing {
+	publications {
+		create("mavenJava", MavenPublication) {
+			from components.java
+		}
+	}
+
+	// See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
+	repositories {
+		// Add repositories to publish to here.
+		// Notice: This block does NOT have the same function as the block in the top level.
+		// The repositories here will be used for publishing your artifact, not for
+		// retrieving dependencies.
+	}
+}

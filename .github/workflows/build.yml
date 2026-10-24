@@ -1,0 +1,47 @@
+# Automatically build the project and run any configured tests for every push
+# and submitted pull request. This can help catch issues that only occur on
+# certain platforms or Java versions, and provides a first line of defence
+# against bad commits.
+
+name: build
+on: [pull_request, push]
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: validate gradle wrapper
+        uses: gradle/actions/wrapper-validation@v6
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+      - name: build
+        run: ./gradlew build
+      - name: start a server to check the mod's data files
+        # Recipes, advancements etc. are only checked when a world loads, not by the build.
+        run: |
+          mkdir -p run-server && echo "eula=true" > run-server/eula.txt
+          ./gradlew runServer --no-daemon > server.log 2>&1 &
+          for i in $(seq 1 120); do
+            sleep 5
+            if grep -qE "Done \(|Failed to load datapacks|Failed to load registries|Exception in server tick" server.log; then break; fi
+          done
+          pkill -f runServer || true
+          pkill java || true
+          if ! grep -q "Done (" server.log; then
+            grep -nE -A20 "ERROR|Failed" server.log | head -150
+            echo "::error::The server did not start with the mod loaded"
+            exit 1
+          fi
+          echo "Server started fine"
+      - name: capture build artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: Artifacts
+          path: build/libs/
