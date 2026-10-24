@@ -15,6 +15,10 @@ loom {
 
 	// Own folder for the dev server, so client and server can run at the same time.
 	runs {
+		// Room for a big mod pack in run/mods, like the memory setting in Prism. Lower it if the PC has less RAM.
+		client {
+			vmArg "-Xmx8G"
+		}
 		server {
 			runDir "run-server"
 		}
