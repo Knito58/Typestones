@@ -56,6 +56,10 @@ public final class LetterSync {
 	/** Called by the block model when it drew the stone at pos without its letter. */
 	public static void waitFor(String hash, BlockPos pos) {
 		WAITING.computeIfAbsent(hash, h -> ConcurrentHashMap.newKeySet()).add(pos.immutable());
+		// The letter may have arrived between the model's look-up and this call; then nobody else redraws.
+		if (Letters.isKnown(hash)) {
+			Minecraft.getInstance().execute(() -> redraw(List.of(hash)));
+		}
 	}
 
 	/**
@@ -96,13 +100,18 @@ public final class LetterSync {
 
 	private static void received(List<LibraryLetter> letters) {
 		Letters.receive(letters);
+		redraw(letters.stream().map(LibraryLetter::hash).toList());
+	}
+
+	/** Redraws the stones that waited for these letters. Main thread only. */
+	private static void redraw(List<String> hashes) {
 		ClientLevel level = Minecraft.getInstance().level;
 		if (level == null) {
 			return;
 		}
 		Set<Long> sections = new HashSet<>();
-		for (LibraryLetter letter : letters) {
-			Set<BlockPos> positions = WAITING.remove(letter.hash());
+		for (String hash : hashes) {
+			Set<BlockPos> positions = WAITING.remove(hash);
 			if (positions != null) {
 				for (BlockPos pos : positions) {
 					sections.add(SectionPos.asLong(pos));
