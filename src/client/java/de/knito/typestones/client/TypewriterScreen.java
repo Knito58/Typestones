@@ -338,8 +338,7 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		graphics.fill(px + 1, py + 1, px + PANEL_WIDTH - 1, py + imageHeight - 1, 0xFFC6C6C6);
 		graphics.text(font, Component.translatable("gui.typestones.font"), px + 6, py + 6, 0xFF404040, false);
 
-		String name = settings.isClassic() ? Component.translatable("gui.typestones.font_classic").getString() : settings.font();
-		graphics.centeredText(font, font.plainSubstrByWidth(name, PANEL_WIDTH - 52), px + PANEL_WIDTH / 2, py + 43, 0xFFFFFFFF);
+		graphics.centeredText(font, shortFontName(), px + PANEL_WIDTH / 2, py + 43, 0xFFFFFFFF);
 		graphics.centeredText(font, Component.translatable("gui.typestones.scale", settings.scale()), px + PANEL_WIDTH / 2, py + 85, 0xFFFFFFFF);
 		String baseline = (settings.baseline() > 0 ? "+" : "") + settings.baseline();
 		graphics.centeredText(font, Component.translatable("gui.typestones.baseline", baseline), px + PANEL_WIDTH / 2, py + 105, 0xFFFFFFFF);
@@ -368,6 +367,17 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		} else if (!settings.isClassic() && !LetterBaker.canDisplay(settings.font(), c)) {
 			graphics.centeredText(font, Component.translatable("gui.typestones.font_lacks"), px + PANEL_WIDTH / 2, by + PREVIEW + 14, 0xFF802020);
 		}
+	}
+
+	private String fontName() {
+		return settings.isClassic() ? Component.translatable("gui.typestones.font_classic").getString() : settings.font();
+	}
+
+	/** The font name, cut with "…" when it is wider than the room between the arrows. */
+	private String shortFontName() {
+		String name = fontName();
+		int room = PANEL_WIDTH - 52;
+		return font.width(name) <= room ? name : font.plainSubstrByWidth(name, room - font.width("…")) + "…";
 	}
 
 	private static void frame(GuiGraphicsExtractor graphics, int x, int y, int w, int h, int color) {
@@ -402,6 +412,12 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 	@Override
 	protected void extractTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
 		super.extractTooltip(graphics, mouseX, mouseY);
+		// A cut font name shows in full when hovered.
+		int px = panelX();
+		if (mouseX >= px + 24 && mouseX < px + PANEL_WIDTH - 24 && mouseY >= topPos + 38 && mouseY < topPos + 56
+				&& !shortFontName().equals(fontName())) {
+			graphics.setTooltipForNextFrame(Component.literal(fontName()), mouseX, mouseY);
+		}
 		if (hoveredSlot != null && hoveredSlot.index <= TypewriterBlockEntity.SLOT_BACKGROUND && !hoveredSlot.hasItem()
 				&& menu.getCarried().isEmpty()) {
 			String key = hoveredSlot.index == TypewriterBlockEntity.SLOT_LETTER ? "gui.typestones.slot_letter" : "gui.typestones.slot_background";
