@@ -296,7 +296,7 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		LetterSync.upload(baked.values());
 		if (fresh[0] > 0) {
 			Minecraft minecraft = Minecraft.getInstance();
-			SystemToast.addOrUpdate(minecraft.toastManager(), BAKED_TOAST, Component.translatable("block.typestones.typewriter"),
+			SystemToast.addOrUpdate(minecraft.gui.toastManager(), BAKED_TOAST, Component.translatable("block.typestones.typewriter"),
 					Component.translatable("gui.typestones.toast.baked", fresh[0], settings.fontName(), settings.size()));
 		}
 		return hashes;
