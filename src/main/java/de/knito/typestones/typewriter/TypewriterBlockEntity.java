@@ -280,7 +280,7 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 	protected void loadAdditional(ValueInput input) {
 		super.loadAdditional(input);
 		font = new FontSettings(input.getStringOr("font", FontSettings.CLASSIC), input.getIntOr("letter_size", 32),
-				input.getIntOr("scale", 100), input.getIntOr("baseline", 0));
+				input.getIntOr("scale", 100), input.getIntOr("baseline", 0), input.getIntOr("font_style", FontSettings.REGULAR));
 		text = cleanText(input.getStringOr("text", ""), font.isClassic());
 		repeat = Math.clamp(input.getIntOr("repeat", 1), 1, MAX_REPEAT);
 		// Typewriters from before fonts saved the job as classic text.
@@ -304,6 +304,7 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 		output.putInt("letter_size", font.size());
 		output.putInt("scale", font.scale());
 		output.putInt("baseline", font.baseline());
+		output.putInt("font_style", font.style());
 		output.store("job_letters", LETTERS_CODEC, jobLetters);
 		output.putInt("job_repeat", jobRepeat);
 		output.putInt("made", made);

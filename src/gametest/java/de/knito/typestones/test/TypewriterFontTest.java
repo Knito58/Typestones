@@ -25,7 +25,7 @@ import de.knito.typestones.typewriter.TypewriterStatus;
 
 /** The Typewriter with fonts: texts, settings and starting a job from letters in the library. */
 public class TypewriterFontTest {
-	private static final FontSettings TEST_FONT = new FontSettings("Test Font", 32, 100, 0);
+	private static final FontSettings TEST_FONT = new FontSettings("Test Font", 32, 100, 0, FontSettings.BOLD);
 
 	private static TypewriterBlockEntity typewriter() {
 		TypewriterBlockEntity typewriter = new TypewriterBlockEntity(BlockPos.ZERO, ModTypewriter.BLOCK.defaultBlockState());
@@ -53,9 +53,11 @@ public class TypewriterFontTest {
 
 	@GameTest
 	public void settingsStayInRange(GameTestHelper helper) {
-		FontSettings wild = new FontSettings("", 50, 1000, -99);
+		FontSettings wild = new FontSettings("", 50, 1000, -99, 7);
 		helper.assertTrue(wild.isClassic() && wild.size() == 64 && wild.scale() == FontSettings.MAX_SCALE
-				&& wild.baseline() == -FontSettings.MAX_BASELINE, "Settings out of range: " + wild);
+				&& wild.baseline() == -FontSettings.MAX_BASELINE && wild.style() == (FontSettings.BOLD | FontSettings.ITALIC),
+				"Settings out of range: " + wild);
+		helper.assertTrue(TEST_FONT.fontName().equals("Test Font Bold"), "Font name: " + TEST_FONT.fontName());
 
 		TypewriterActionPayload sent = new TypewriterActionPayload(TypewriterActionPayload.Action.START, "中 中", 3, TEST_FONT,
 				List.of("a", Letters.NONE, "a"));

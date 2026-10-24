@@ -14,7 +14,7 @@ First version for Minecraft 26.3 (Fabric). Needed on client and server.
 - Letters are drawn as flat rectangles in the letter dye, not as textures. A stone stores a hash of
   its letter's pixels, so the game needs no block or texture per character.
 - Fonts: the Typewriter bakes letters from any font installed on the player's computer, in any
-  script, at 16, 32 or 64 pixels, with scale and baseline settings and a preview with the cell and
+  script, at 16, 32 or 64 pixels, regular, bold, italic or bold italic, with scale and baseline settings and a preview with the cell and
   baseline. New letters go to the world's letter library when Start is pressed. The built-in classic
   face needs no baking.
 - Letter library per world: letters baked by players are saved with the world, and each player's game
