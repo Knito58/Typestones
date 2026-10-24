@@ -8,34 +8,14 @@ import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
 
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.MapCodec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
-
-import io.netty.buffer.ByteBuf;
-
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-
 /**
  * A letter as a square of pixels that are ink or not, e.g. 16x16 or 32x32. It is drawn as flat
  * rectangles in the letter dye on the stone faces, so any number of letters works without textures.
- * Immutable; two letters with the same pixels have the same {@link #hash()}.
+ * Immutable; two letters with the same pixels have the same {@link #hash()}. Plain Java on purpose:
+ * GlyphGen uses it without Minecraft on the classpath; the codecs are in {@link LibraryLetter}.
  */
 public final class Letter {
 	public static final int MAX_SIZE = 64;
-
-	/** Saved as {"size": 16, "pixels": "<hex>"}. */
-	public static final MapCodec<Letter> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-			Codec.intRange(1, MAX_SIZE).fieldOf("size").forGetter(Letter::size),
-			Codec.STRING.fieldOf("pixels").forGetter(Letter::toHex)
-	).apply(instance, Letter::fromHex));
-
-	public static final StreamCodec<ByteBuf, Letter> STREAM_CODEC = StreamCodec.composite(
-			ByteBufCodecs.VAR_INT, Letter::size,
-			ByteBufCodecs.byteArray(MAX_SIZE * MAX_SIZE / 8), Letter::toBytes,
-			Letter::fromBytes
-	);
 
 	private final int size;
 	/** Row by row from the top, one bit per pixel. */
