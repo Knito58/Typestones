@@ -112,9 +112,16 @@ public class TypewriterMenu extends AbstractContainerMenu {
 		return dyeSamples.stillValid(player);
 	}
 
-	/** A dye sets the sample, anything else clears it. The background may stay empty: plain smooth stone. */
+	/**
+	 * A dye sets the sample, anything else clears it. The background may stay empty: plain smooth stone.
+	 * The dye of the other slot is refused, since the letter would be invisible; a space makes that block.
+	 */
 	private void setSample(int slot, ItemStack stack) {
 		ItemStack sample = TypewriterBlockEntity.dyeOf(stack).map(c -> new ItemStack(TypewriterBlockEntity.dyeItem(c))).orElse(ItemStack.EMPTY);
+		int other = slot == TypewriterBlockEntity.SLOT_LETTER ? TypewriterBlockEntity.SLOT_BACKGROUND : TypewriterBlockEntity.SLOT_LETTER;
+		if (!sample.isEmpty() && ItemStack.isSameItem(sample, dyeSamples.getItem(other))) {
+			return;
+		}
 		dyeSamples.setItem(slot, sample);
 		dyeSamples.setChanged();
 	}
@@ -140,13 +147,19 @@ public class TypewriterMenu extends AbstractContainerMenu {
 		return slot.index > TypewriterBlockEntity.SLOT_BACKGROUND && super.canDragTo(slot);
 	}
 
-	/** Shift-click on a dye in the inventory sets the letter dye; the stack stays where it is. */
+	/**
+	 * Shift-click on a dye in the inventory fills the letter dye, then the background dye; when both are
+	 * set it replaces the letter dye. The stack stays where it is.
+	 */
 	@Override
 	public ItemStack quickMoveStack(Player player, int slotIndex) {
 		Slot slot = slots.get(slotIndex);
 		if (slotIndex > TypewriterBlockEntity.SLOT_BACKGROUND && slot.hasItem()
 				&& TypewriterBlockEntity.dyeOf(slot.getItem()).isPresent()) {
-			setSample(TypewriterBlockEntity.SLOT_LETTER, slot.getItem());
+			boolean letterSet = !dyeSamples.getItem(TypewriterBlockEntity.SLOT_LETTER).isEmpty();
+			boolean backgroundSet = !dyeSamples.getItem(TypewriterBlockEntity.SLOT_BACKGROUND).isEmpty();
+			setSample(letterSet && !backgroundSet ? TypewriterBlockEntity.SLOT_BACKGROUND : TypewriterBlockEntity.SLOT_LETTER,
+					slot.getItem());
 		}
 		return ItemStack.EMPTY;
 	}
