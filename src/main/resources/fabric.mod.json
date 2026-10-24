@@ -1,0 +1,33 @@
+{
+	"schemaVersion": 1,
+	"id": "typestones",
+	"version": "${version}",
+	"name": "Typestones",
+	"description": "Smooth stone blocks that carry a letter on all six sides in two dye colors, made by the Alpha Station from a typed line of text.",
+	"authors": [
+		"Claude",
+		"Konitor"
+	],
+	"contact": {
+		"homepage": "https://github.com/Knito58/typestones",
+		"sources": "https://github.com/Knito58/typestones",
+		"issues": "https://github.com/Knito58/typestones/issues"
+	},
+	"license": "MIT",
+	"icon": "assets/typestones/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"de.knito.typestones.Typestones"
+		],
+		"client": [
+			"de.knito.typestones.client.TypestonesClient"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

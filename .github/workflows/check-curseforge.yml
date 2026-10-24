@@ -1,0 +1,25 @@
+# Checks the CURSEFORGE_TOKEN secret without uploading anything:
+# asks CurseForge for its version list and prints the ids the release would use.
+name: check CurseForge token
+on: workflow_dispatch
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - env:
+          CF_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          CF_API: https://minecraft.curseforge.com/api
+        run: |
+          [ -n "$CF_TOKEN" ] || { echo "::error::The CURSEFORGE_TOKEN secret is missing"; exit 1; }
+          curl -sS --fail-with-body -H "X-Api-Token: $CF_TOKEN" "$CF_API/game/version-types" > types.json
+          curl -sS --fail-with-body -H "X-Api-Token: $CF_TOKEN" "$CF_API/game/versions" > versions.json
+          for q in "26.3 ^minecraft-" "Fabric ^modloader$" "Client ^environment$" "Server ^environment$"; do
+            set -- $q
+            id=$(jq -r --arg name "$1" --arg type "$2" '
+              ([input[] | select(.slug | test($type)) | .id]) as $types
+              | [.[] | select(.name == $name and (.gameVersionTypeID as $t | $types | index($t)))][0].id // "NOT FOUND"
+            ' versions.json types.json)
+            echo "$1: $id"
+          done
+          echo "Token works."

@@ -1,0 +1,76 @@
+# Pushing to the release branch builds the mod and publishes it as a GitHub release,
+# tagged with the version from gradle.properties, and uploads it to CurseForge
+# (needs the CURSEFORGE_TOKEN secret).
+name: release
+on:
+  push:
+    branches: [release]
+  # By hand from the Actions tab, e.g. to upload an existing version to CurseForge only.
+  workflow_dispatch:
+    inputs:
+      github_release:
+        description: Create the GitHub release too
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+env:
+  CURSEFORGE_PROJECT_ID: "1762715"  # Typestones on CurseForge
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+      - run: chmod +x ./gradlew && ./gradlew build && rm -f build/libs/*-sources.jar
+      - name: release notes from the changelog
+        run: |
+          v=$(grep '^version=' gradle.properties | cut -d= -f2)
+          echo "VERSION=$v" >> "$GITHUB_ENV"
+          awk -v h="## $v" 'index($0,h)==1{f=1;next} /^## /{f=0} f' CHANGELOG.md > notes.md
+          cat notes.md
+      - uses: softprops/action-gh-release@v2
+        if: github.event_name == 'push' || inputs.github_release
+        with:
+          tag_name: v${{ env.VERSION }}
+          target_commitish: ${{ github.sha }}
+          name: Typestones ${{ env.VERSION }} for Minecraft 26.3
+          body_path: notes.md
+          files: build/libs/*.jar
+      - name: upload to CurseForge
+        # Uses CURSEFORGE_PROJECT_ID from the top of this file.
+        if: env.CURSEFORGE_PROJECT_ID != ''
+        env:
+          CF_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          CF_API: https://minecraft.curseforge.com/api
+        run: |
+          curl -sSf -H "X-Api-Token: $CF_TOKEN" "$CF_API/game/version-types" > types.json
+          curl -sSf -H "X-Api-Token: $CF_TOKEN" "$CF_API/game/versions" > versions.json
+          # CurseForge wants its own ids for game versions, loaders and environments
+          id_of() {
+            jq -r --arg name "$1" --arg type "$2" '
+              ([input[] | select(.slug | test($type)) | .id]) as $types
+              | [.[] | select(.name == $name and (.gameVersionTypeID as $t | $types | index($t)))][0].id // empty
+            ' versions.json types.json
+          }
+          GV=$(jq -cn --arg mc "$(id_of 26.3 '^minecraft-')" --arg f "$(id_of Fabric '^modloader$')" \
+            --arg c "$(id_of Client '^environment$')" --arg s "$(id_of Server '^environment$')" \
+            '[$mc, $f, $c, $s] | map(select(. != "") | tonumber)')
+          echo "game version ids: $GV"
+          [ "$(echo "$GV" | jq length)" -ge 2 ] || { echo "No CurseForge ids for 26.3/Fabric"; exit 1; }
+          JAR=$(ls build/libs/*.jar)
+          META=$(jq -n --rawfile log notes.md --arg name "Typestones $VERSION" --argjson gv "$GV" '{
+            changelog: $log, changelogType: "markdown", displayName: $name,
+            gameVersions: $gv, releaseType: "release",
+            relations: {projects: [
+              {slug: "fabric-api", type: "requiredDependency"}
+            ]}
+          }')
+          curl -sS --fail-with-body -H "X-Api-Token: $CF_TOKEN" --form-string "metadata=$META" -F "file=@$JAR" \
+            "$CF_API/projects/$CURSEFORGE_PROJECT_ID/upload-file"
