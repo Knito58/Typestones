@@ -40,6 +40,13 @@ public class TypestoneDropTest {
 			helper.assertTrue(false, "The Typestone has no block entity");
 		}
 
+		// Diagnostics: which loot table the block uses and what the server made of it
+		var key = state.getBlock().getLootTable().orElseThrow();
+		var table = helper.getLevel().getServer().reloadableRegistries().getLootTable(key);
+		String lootInfo = " | loot table " + key + (table == net.minecraft.world.level.storage.loot.LootTable.EMPTY ? " is EMPTY" : " loaded")
+				+ " | direct drops " + net.minecraft.world.level.block.Block.getDrops(state, helper.getLevel(), absolute, helper.getLevel().getBlockEntity(absolute))
+				.stream().map(s -> s + " " + s.getComponentsPatch()).toList();
+
 		helper.getLevel().destroyBlock(absolute, true);
 
 		List<ItemEntity> drops = helper.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(absolute).inflate(2));
@@ -47,9 +54,9 @@ public class TypestoneDropTest {
 		ItemStack drop = drops.getFirst().getItem();
 		helper.assertTrue(drop.getItem() instanceof TypestoneItem, "The drop is " + drop + ", not a Typestone");
 		helper.assertTrue(TypestoneItem.glyph(drop) == glyph,
-				"The drop lost its letter: glyph " + TypestoneItem.glyph(drop) + ", components " + drop.getComponents());
+				"The drop lost its letter: glyph " + TypestoneItem.glyph(drop) + ", patch " + drop.getComponentsPatch() + lootInfo);
 		helper.assertTrue(dyes.equals(drop.get(ModComponents.DYES)),
-				"The drop lost its dyes: " + drop.get(ModComponents.DYES) + ", components " + drop.getComponents());
+				"The drop lost its dyes: " + drop.get(ModComponents.DYES) + ", patch " + drop.getComponentsPatch() + lootInfo);
 		helper.succeed();
 	}
 }
