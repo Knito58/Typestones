@@ -70,7 +70,7 @@ public class ModTypewriter {
 				case GET_PENCIL -> {
 					ItemStack pencil = typewriter.makePencil();
 					if (!pencil.isEmpty() && !context.player().getInventory().add(pencil)) {
-						context.player().drop(pencil, false);
+						Block.popResource(context.player().level(), context.player().blockPosition(), pencil);
 					}
 				}
 			}
