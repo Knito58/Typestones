@@ -53,5 +53,10 @@
 	"gui.typestones.pencil": "Pencil",
 	"gui.typestones.pencil_tooltip": "Get a pencil that places the last started line, stone by stone, from the inventory at the back. Costs a stick and a smooth stone.",
 	"gui.typestones.status.no_line": "Press Start once first",
-	"gui.typestones.status.needs_stick": "A pencil needs a stick"
+	"gui.typestones.status.needs_stick": "A pencil needs a stick",
+	"item.typestones.pencil.missing": "Next stone missing in the Typewriter's chest: %s",
+	"item.typestones.pencil.written": "Line written",
+	"item.typestones.pencil.gone": "The last stone is no longer there",
+	"item.typestones.pencil.other_dimension": "The pencil's Typewriter is in another dimension",
+	"item.typestones.pencil.no_typewriter": "The pencil's Typewriter is gone"
 }

@@ -53,5 +53,10 @@
 	"gui.typestones.pencil": "Stift",
 	"gui.typestones.pencil_tooltip": "Gibt einen Bleistift, der die zuletzt gestartete Zeile Stein für Stein aus dem Inventar hinten setzt. Kostet einen Stock und einen glatten Stein.",
 	"gui.typestones.status.no_line": "Erst einmal Start drücken",
-	"gui.typestones.status.needs_stick": "Ein Bleistift braucht einen Stock"
+	"gui.typestones.status.needs_stick": "Ein Bleistift braucht einen Stock",
+	"item.typestones.pencil.missing": "Nächster Stein fehlt in der Truhe der Schreibmaschine: %s",
+	"item.typestones.pencil.written": "Zeile geschrieben",
+	"item.typestones.pencil.gone": "Der letzte Stein ist nicht mehr da",
+	"item.typestones.pencil.other_dimension": "Die Schreibmaschine des Bleistifts ist in einer anderen Dimension",
+	"item.typestones.pencil.no_typewriter": "Die Schreibmaschine des Bleistifts ist weg"
 }

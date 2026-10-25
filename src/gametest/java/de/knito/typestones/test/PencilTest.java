@@ -10,18 +10,26 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 
+import de.knito.typestones.ModBlocks;
 import de.knito.typestones.ModComponents;
 import de.knito.typestones.ModPencil;
 import de.knito.typestones.ModTypewriter;
 import de.knito.typestones.block.Dyes;
+import de.knito.typestones.block.TypestoneBlock;
+import de.knito.typestones.block.TypestoneBlockEntity;
 import de.knito.typestones.letter.LetterLibrary;
 import de.knito.typestones.letter.Letters;
 import de.knito.typestones.pencil.PencilLine;
@@ -30,7 +38,7 @@ import de.knito.typestones.typewriter.TypewriterBlock;
 import de.knito.typestones.typewriter.TypewriterBlockEntity;
 import de.knito.typestones.typewriter.TypewriterStatus;
 
-/** Getting a pencil from the Typewriter. */
+/** Getting a pencil from the Typewriter, and writing a line with it. */
 public class PencilTest {
 	@GameTest
 	public void pencilCostsStickAndStone(GameTestHelper helper) {
@@ -56,7 +64,7 @@ public class PencilTest {
 		chest.setItem(1, new ItemStack(Items.SMOOTH_STONE, 2));
 		ItemStack pencil = typewriter.makePencil();
 		PencilLine line = pencil.get(ModComponents.PENCIL_LINE);
-		helper.assertTrue(line != null && line.next() == 0
+		helper.assertTrue(line != null && line.next() == 0 && line.placed().isEmpty()
 						&& line.letters().equals(List.of(Letters.classic('A'), Letters.NONE, Letters.classic('B')))
 						&& line.typewriter().equals(GlobalPos.of(helper.getLevel().dimension(), helper.absolutePos(pos))),
 				"Wrong pencil line: " + line);
@@ -68,5 +76,52 @@ public class PencilTest {
 		helper.assertTrue(line.equals(PencilLine.STREAM_CODEC.decode(buf)), "The pencil line changed on the way");
 		helper.assertTrue(ModPencil.ITEM.getDefaultMaxStackSize() == 1, "Pencils must not stack");
 		helper.succeed();
+	}
+
+	@GameTest
+	public void pencilWritesAndUndoes(GameTestHelper helper) {
+		BlockPos pos = new BlockPos(1, 1, 1);
+		helper.setBlock(pos, ModTypewriter.BLOCK.defaultBlockState().setValue(TypewriterBlock.FACING, Direction.NORTH));
+		helper.setBlock(pos.south(), Blocks.CHEST);
+		helper.setBlock(new BlockPos(4, 1, 4), Blocks.STONE);
+		if (!(helper.getBlockEntity(pos.south(), ChestBlockEntity.class) instanceof ChestBlockEntity chest)) {
+			throw helper.assertionException(Component.literal("Output chest missing"));
+		}
+		List<String> letters = List.of(Letters.classic('A'), Letters.NONE, Letters.classic('B'));
+		for (int i = 0; i < letters.size(); i++) {
+			chest.setItem(i, ModBlocks.TYPESTONE_ITEM.stack(letters.get(i), Dyes.DEFAULT, 1));
+		}
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		player.setItemInHand(InteractionHand.MAIN_HAND, ModPencil.pencil(GlobalPos.of(helper.getLevel().dimension(), helper.absolutePos(pos)), letters, Dyes.DEFAULT));
+
+		BlockPos first = helper.absolutePos(new BlockPos(4, 2, 4));
+		click(helper, player, first.below(), Direction.UP);
+		helper.assertTrue(helper.getLevel().getBlockEntity(first) instanceof TypestoneBlockEntity stone && stone.letter().equals(letters.get(0)),
+				"The first stone isn't an A");
+		helper.assertTrue(chest.getItem(0).isEmpty(), "The A is still in the chest");
+
+		click(helper, player, first, Direction.UP);
+		Direction right = helper.getLevel().getBlockState(first).getValue(TypestoneBlock.FACING).getClockWise();
+		BlockPos second = first.relative(right);
+		helper.assertTrue(helper.getLevel().getBlockState(second).is(ModBlocks.TYPESTONE), "The space didn't go right of the A");
+
+		player.setShiftKeyDown(true);
+		click(helper, player, second, Direction.UP);
+		player.setShiftKeyDown(false);
+		PencilLine line = player.getMainHandItem().get(ModComponents.PENCIL_LINE);
+		helper.assertTrue(helper.getLevel().getBlockState(second).isAir() && chest.countItem(ModBlocks.TYPESTONE_ITEM) == 2 && line != null && line.next() == 1,
+				"Undo didn't put the space back: " + line);
+
+		click(helper, player, first, Direction.UP);
+		click(helper, player, second, Direction.UP);
+		helper.assertTrue(player.getMainHandItem().get(ModComponents.PENCIL_LINE) == null, "The pencil isn't empty after the line");
+		helper.assertTrue(helper.getLevel().getBlockEntity(second.relative(right)) instanceof TypestoneBlockEntity stone
+				&& stone.letter().equals(letters.get(2)), "The B is missing");
+		helper.succeed();
+	}
+
+	private static void click(GameTestHelper helper, ServerPlayer player, BlockPos absolute, Direction face) {
+		BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(absolute).relative(face, 0.5), face, absolute, false);
+		player.getMainHandItem().useOn(new UseOnContext(player, InteractionHand.MAIN_HAND, hit));
 	}
 }
