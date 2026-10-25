@@ -11,6 +11,7 @@ import org.jspecify.annotations.Nullable;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -98,6 +99,10 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 				.bounds(leftPos + 88, topPos + 40, 36, 18).build());
 		addRenderableWidget(Button.builder(Component.translatable("gui.typestones.clear"), b -> preset(""))
 				.bounds(leftPos + 128, topPos + 40, 40, 18).build());
+
+		addRenderableWidget(Button.builder(Component.translatable("gui.typestones.pencil"), b -> send(TypewriterActionPayload.Action.GET_PENCIL))
+				.tooltip(Tooltip.create(Component.translatable("gui.typestones.pencil_tooltip")))
+				.bounds(leftPos + 52, topPos + 64, 44, 18).build());
 
 		addRenderableWidget(Button.builder(Component.literal("-"), b -> changeRepeat(-1))
 				.bounds(leftPos + 100, topPos + 64, 16, 18).build());

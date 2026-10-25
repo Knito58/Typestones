@@ -8,7 +8,8 @@
 		"fabric-gametest": [
 			"de.knito.typestones.test.TypestoneDropTest",
 			"de.knito.typestones.test.LetterLibraryTest",
-			"de.knito.typestones.test.TypewriterFontTest"
+			"de.knito.typestones.test.TypewriterFontTest",
+			"de.knito.typestones.test.PencilTest"
 		]
 	},
 	"depends": {

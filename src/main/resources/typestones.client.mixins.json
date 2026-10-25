@@ -3,7 +3,8 @@
 	"package": "de.knito.typestones.client.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"client": [
-		"ItemModelsAccessor"
+		"ItemModelsAccessor",
+		"ItemTintSourcesAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

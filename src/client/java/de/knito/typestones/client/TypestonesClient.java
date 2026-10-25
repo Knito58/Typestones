@@ -8,6 +8,8 @@ import net.fabricmc.fabric.api.client.model.loading.v1.CustomUnbakedBlockStateMo
 import de.knito.typestones.ModTypewriter;
 import de.knito.typestones.Typestones;
 import de.knito.typestones.client.mixin.ItemModelsAccessor;
+import de.knito.typestones.client.mixin.ItemTintSourcesAccessor;
+import de.knito.typestones.client.model.PencilTint;
 import de.knito.typestones.client.model.TypestoneBlockModel;
 import de.knito.typestones.client.model.TypestoneItemModel;
 import de.knito.typestones.client.network.LetterSync;
@@ -21,6 +23,7 @@ public class TypestonesClient implements ClientModInitializer {
 	public void onInitializeClient() {
 		CustomUnbakedBlockStateModel.register(Typestones.id("typestone"), TypestoneBlockModel.Unbaked.CODEC);
 		ItemModelsAccessor.typestones$idMapper().put(Typestones.id("typestone"), TypestoneItemModel.Unbaked.CODEC);
+		ItemTintSourcesAccessor.typestones$idMapper().put(Typestones.id("pencil"), PencilTint.CODEC);
 
 		LetterSync.initialize();
 

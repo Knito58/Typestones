@@ -1,0 +1,41 @@
+{
+	"model": {
+		"type": "minecraft:condition",
+		"property": "minecraft:has_component",
+		"component": "typestones:pencil_line",
+		"on_true": {
+			"type": "minecraft:model",
+			"model": "typestones:item/pencil",
+			"tints": [
+				{
+					"type": "minecraft:constant",
+					"value": -1
+				},
+				{
+					"type": "typestones:pencil"
+				},
+				{
+					"type": "typestones:pencil",
+					"background": true
+				}
+			]
+		},
+		"on_false": {
+			"type": "minecraft:model",
+			"model": "typestones:item/pencil_empty",
+			"tints": [
+				{
+					"type": "minecraft:constant",
+					"value": -1
+				},
+				{
+					"type": "typestones:pencil"
+				},
+				{
+					"type": "typestones:pencil",
+					"background": true
+				}
+			]
+		}
+	}
+}

@@ -46,5 +46,12 @@
 	"commands.typestones.letter.info_built_in": "„%s“ (%s, Schrift %s), Schriftart %s in %s×%5$s, eingebaut, Hash %s",
 	"commands.typestones.letter.not_removable": "%s kann nicht entfernt werden: eingebaut oder nicht in der Sammlung.",
 	"commands.typestones.letter.removed": "Buchstabe %s entfernt. Steine damit erscheinen jetzt ohne Buchstaben.",
-	"commands.typestones.letter.hold": "Einen Typestone mit Buchstaben in die Hand nehmen oder einen Hash angeben."
+	"commands.typestones.letter.hold": "Einen Typestone mit Buchstaben in die Hand nehmen oder einen Hash angeben.",
+	"item.typestones.pencil": "Bleistift",
+	"item.typestones.pencil.next": "Nächster Stein: %s von %s",
+	"item.typestones.pencil.empty": "Seine Zeile ist geschrieben",
+	"gui.typestones.pencil": "Stift",
+	"gui.typestones.pencil_tooltip": "Gibt einen Bleistift, der die zuletzt gestartete Zeile Stein für Stein aus dem Inventar hinten setzt. Kostet einen Stock und einen glatten Stein.",
+	"gui.typestones.status.no_line": "Erst einmal Start drücken",
+	"gui.typestones.status.needs_stick": "Ein Bleistift braucht einen Stock"
 }

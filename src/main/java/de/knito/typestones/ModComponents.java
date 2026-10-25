@@ -8,6 +8,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.codec.ByteBufCodecs;
 
 import de.knito.typestones.block.Dyes;
+import de.knito.typestones.pencil.PencilLine;
 
 public class ModComponents {
 	/** Hash of the letter (see Letters); absent on a plain block. */
@@ -27,6 +28,16 @@ public class ModComponents {
 			DataComponentType.<Dyes>builder()
 					.persistent(Dyes.CODEC)
 					.networkSynchronized(Dyes.STREAM_CODEC)
+					.build()
+	);
+
+	/** The line a pencil writes; absent on an empty pencil. */
+	public static final DataComponentType<PencilLine> PENCIL_LINE = Registry.register(
+			BuiltInRegistries.DATA_COMPONENT_TYPE,
+			Typestones.id("pencil_line"),
+			DataComponentType.<PencilLine>builder()
+					.persistent(PencilLine.CODEC)
+					.networkSynchronized(PencilLine.STREAM_CODEC)
 					.build()
 	);
 
