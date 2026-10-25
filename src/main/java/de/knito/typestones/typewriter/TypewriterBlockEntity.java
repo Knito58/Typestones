@@ -259,6 +259,15 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 		return TypewriterStatus.RUNNING;
 	}
 
+	/** The inventory at the back, where the stones go; null when there is none. */
+	public @Nullable Storage<ItemVariant> output() {
+		if (level == null) {
+			return null;
+		}
+		Direction back = getBlockState().getValue(TypewriterBlock.FACING).getOpposite();
+		return ItemStorage.SIDED.find(level, worldPosition.relative(back), back.getOpposite());
+	}
+
 	/** The inventories on every side but the back. */
 	private static List<Storage<ItemVariant>> inputs(Level level, BlockPos pos, Direction back) {
 		List<Storage<ItemVariant>> inputs = new ArrayList<>();

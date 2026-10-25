@@ -4,21 +4,41 @@ import java.util.function.Consumer;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.item.component.TooltipDisplay;
 
 import de.knito.typestones.ModComponents;
 import de.knito.typestones.letter.Letters;
 
 /**
- * The pencil from a Typewriter: it writes that Typewriter's line, stone by stone. Without a
- * {@link ModComponents#PENCIL_LINE} it is empty: its line is written.
+ * The pencil from a Typewriter: it writes that Typewriter's line, stone by stone (see {@link PencilWriter}).
+ * Without a {@link ModComponents#PENCIL_LINE} it is empty: its line is written.
  */
 public class PencilItem extends Item {
 	public PencilItem(Properties properties) {
 		super(properties);
+	}
+
+	@Override
+	public InteractionResult useOn(UseOnContext context) {
+		ItemStack pencil = context.getItemInHand();
+		PencilLine line = pencil.get(ModComponents.PENCIL_LINE);
+		Player player = context.getPlayer();
+		if (line == null || player == null) {
+			return InteractionResult.PASS;
+		}
+		if (!(context.getLevel() instanceof ServerLevel level)) {
+			return InteractionResult.SUCCESS;
+		}
+		return player.isSecondaryUseActive()
+				? PencilWriter.undo(level, player, pencil, line)
+				: PencilWriter.write(level, player, context, pencil, line);
 	}
 
 	@Override
