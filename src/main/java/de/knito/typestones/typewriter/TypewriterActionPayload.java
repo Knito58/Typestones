@@ -18,7 +18,7 @@ import de.knito.typestones.Typestones;
 public record TypewriterActionPayload(Action action, String text, int repeat, FontSettings font, List<String> letters)
 		implements CustomPacketPayload {
 	public enum Action {
-		SAVE, START, STOP
+		SAVE, START, STOP, GET_PENCIL
 	}
 
 	public static final Type<TypewriterActionPayload> TYPE = new Type<>(Typestones.id("typewriter_action"));

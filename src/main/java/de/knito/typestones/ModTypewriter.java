@@ -8,6 +8,7 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -66,6 +67,12 @@ public class ModTypewriter {
 				}
 				case START -> typewriter.start(payload.letters(), LetterLibrary.get(context.player().level().getServer()));
 				case STOP -> typewriter.stop();
+				case GET_PENCIL -> {
+					ItemStack pencil = typewriter.makePencil();
+					if (!pencil.isEmpty() && !context.player().getInventory().add(pencil)) {
+						Block.popResource(context.player().level(), context.player().blockPosition(), pencil);
+					}
+				}
 			}
 		});
 	}

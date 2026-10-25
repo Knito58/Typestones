@@ -46,5 +46,12 @@
 	"commands.typestones.letter.info_built_in": "\"%s\" (%s, script %s), font %s at %s×%5$s, built in, hash %s",
 	"commands.typestones.letter.not_removable": "Can't remove %s: it is built in or not in the library.",
 	"commands.typestones.letter.removed": "Removed letter %s. Stones with it now show as plain.",
-	"commands.typestones.letter.hold": "Hold a Typestone with a letter, or give a hash."
+	"commands.typestones.letter.hold": "Hold a Typestone with a letter, or give a hash.",
+	"item.typestones.pencil": "Pencil",
+	"item.typestones.pencil.next": "Next stone: %s of %s",
+	"item.typestones.pencil.empty": "Its line is written",
+	"gui.typestones.pencil": "Pencil",
+	"gui.typestones.pencil_tooltip": "Get a pencil that places the last started line, stone by stone, from the inventory at the back. Costs a stick and a smooth stone.",
+	"gui.typestones.status.no_line": "Press Start once first",
+	"gui.typestones.status.needs_stick": "A pencil needs a stick"
 }

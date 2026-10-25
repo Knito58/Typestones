@@ -10,6 +10,7 @@ import org.jspecify.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -37,6 +38,7 @@ import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 
 import de.knito.typestones.ModBlocks;
+import de.knito.typestones.ModPencil;
 import de.knito.typestones.ModTypewriter;
 import de.knito.typestones.block.Dyes;
 import de.knito.typestones.block.TypestoneItem;
@@ -226,15 +228,7 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 		if (output == null) {
 			return TypewriterStatus.NO_OUTPUT;
 		}
-		List<Storage<ItemVariant>> inputs = new ArrayList<>();
-		for (Direction side : Direction.values()) {
-			if (side != back) {
-				Storage<ItemVariant> input = ItemStorage.SIDED.find(level, pos.relative(side), side.getOpposite());
-				if (input != null) {
-					inputs.add(input);
-				}
-			}
-		}
+		List<Storage<ItemVariant>> inputs = inputs(level, pos, back);
 
 		String glyph = jobLetters.get(made % jobLetters.size());
 		boolean inked = !glyph.equals(Letters.NONE);
@@ -263,6 +257,46 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 		}
 		made++;
 		return TypewriterStatus.RUNNING;
+	}
+
+	/** The inventories on every side but the back. */
+	private static List<Storage<ItemVariant>> inputs(Level level, BlockPos pos, Direction back) {
+		List<Storage<ItemVariant>> inputs = new ArrayList<>();
+		for (Direction side : Direction.values()) {
+			if (side != back) {
+				Storage<ItemVariant> input = ItemStorage.SIDED.find(level, pos.relative(side), side.getOpposite());
+				if (input != null) {
+					inputs.add(input);
+				}
+			}
+		}
+		return inputs;
+	}
+
+	/**
+	 * Makes a pencil for the line of the last Start, in the current dyes, from a stick and a smooth stone
+	 * of the inputs. Empty when that fails; the status then says why.
+	 */
+	public ItemStack makePencil() {
+		if (level == null || jobLetters.isEmpty()) {
+			status = TypewriterStatus.NO_LINE;
+			return ItemStack.EMPTY;
+		}
+		Direction back = getBlockState().getValue(TypewriterBlock.FACING).getOpposite();
+		List<Storage<ItemVariant>> inputs = inputs(level, worldPosition, back);
+		try (Transaction transaction = Transaction.openOuter()) {
+			if (missing(inputs, Items.STICK, transaction)) {
+				status = TypewriterStatus.NEEDS_STICK;
+				return ItemStack.EMPTY;
+			}
+			if (missing(inputs, Items.SMOOTH_STONE, transaction)) {
+				status = TypewriterStatus.NEEDS_STONE;
+				return ItemStack.EMPTY;
+			}
+			transaction.commit();
+		}
+		Dyes dyes = new Dyes(dyeOf(dyeSamples.getItem(SLOT_LETTER)).orElse(DyeColor.BLACK), dyeOf(dyeSamples.getItem(SLOT_BACKGROUND)));
+		return ModPencil.pencil(GlobalPos.of(level.dimension(), worldPosition), jobLetters, dyes);
 	}
 
 	/** Takes one item from the first input that has it; true when none has it. */
