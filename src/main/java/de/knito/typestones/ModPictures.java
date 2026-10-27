@@ -36,6 +36,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
@@ -216,7 +217,7 @@ public class ModPictures {
 		}
 		for (ItemStack stone : stones(picture)) {
 			if (!player.getInventory().add(stone)) {
-				player.drop(stone, false);
+				Block.popResource(player.level(), player.blockPosition(), stone);
 			}
 		}
 		context.getSource().sendSuccess(() -> Component.translatable("commands.typestones.picture.given",
