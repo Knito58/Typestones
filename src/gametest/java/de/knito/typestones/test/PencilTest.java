@@ -143,7 +143,8 @@ public class PencilTest {
 		helper.assertTrue(PottedPencilBlock.pot(helper.getLevel(), helper.absolutePos(pos), player, InteractionHand.MAIN_HAND),
 				"The empty pencil didn't go into the pot");
 		helper.assertBlockPresent(ModPencil.POTTED, pos);
-		helper.assertTrue(player.getMainHandItem().isEmpty(), "The pencil is still in the hand");
+		// Like flower pot plants, the pencil stays in a creative player's hand.
+		helper.assertTrue(player.hasInfiniteMaterials() || player.getMainHandItem().isEmpty(), "The pencil is still in the hand");
 
 		helper.getLevel().destroyBlock(helper.absolutePos(pos), true);
 		List<ItemEntity> drops = helper.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(helper.absolutePos(pos)).inflate(2));
