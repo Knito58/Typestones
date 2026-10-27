@@ -1,22 +1,27 @@
 package de.knito.typestones.client;
 
 import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.model.loading.v1.CustomUnbakedBlockStateModel;
 
+import de.knito.typestones.ModBlocks;
 import de.knito.typestones.ModTypewriter;
 import de.knito.typestones.Typestones;
+import de.knito.typestones.block.TypestoneBlockEntity;
 import de.knito.typestones.client.mixin.ItemModelsAccessor;
 import de.knito.typestones.client.mixin.ItemTintSourcesAccessor;
 import de.knito.typestones.client.model.PencilTint;
 import de.knito.typestones.client.model.TypestoneBlockModel;
 import de.knito.typestones.client.model.TypestoneItemModel;
 import de.knito.typestones.client.network.LetterSync;
+import de.knito.typestones.client.picture.PictureStoneRenderer;
+import de.knito.typestones.client.picture.PictureSync;
 
 /**
- * Client entrypoint: registers the models that draw the letters, fetches unknown letters from the
- * server, and opens the Typewriter screen.
+ * Client entrypoint: registers the models that draw the letters and the renderer of pictures, fetches
+ * unknown letters and pictures from the server, and opens the Typewriter screen.
  */
 public class TypestonesClient implements ClientModInitializer {
 	@Override
@@ -26,6 +31,9 @@ public class TypestonesClient implements ClientModInitializer {
 		ItemTintSourcesAccessor.typestones$idMapper().put(Typestones.id("pencil"), PencilTint.CODEC);
 
 		LetterSync.initialize();
+		PictureSync.initialize();
+		BlockEntityRenderers.<TypestoneBlockEntity, PictureStoneRenderer.State>register(ModBlocks.TYPESTONE_ENTITY,
+				context -> new PictureStoneRenderer());
 
 		MenuScreens.register(ModTypewriter.MENU, TypewriterScreen::new);
 	}

@@ -11,7 +11,7 @@
 						{
 							"type": "minecraft:copy_components",
 							"source": "block_entity",
-							"include": ["typestones:letter", "typestones:dyes"]
+							"include": ["typestones:letter", "typestones:dyes", "typestones:picture"]
 						}
 					]
 				}
