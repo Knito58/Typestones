@@ -1,6 +1,7 @@
 package de.knito.typestones.test;
 
 import java.util.List;
+import java.util.Optional;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -12,12 +13,14 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
@@ -33,12 +36,14 @@ import de.knito.typestones.block.TypestoneBlockEntity;
 import de.knito.typestones.letter.LetterLibrary;
 import de.knito.typestones.letter.Letters;
 import de.knito.typestones.pencil.PencilLine;
+import de.knito.typestones.pencil.PencilToss;
+import de.knito.typestones.pencil.PottedPencilBlock;
 import de.knito.typestones.typewriter.FontSettings;
 import de.knito.typestones.typewriter.TypewriterBlock;
 import de.knito.typestones.typewriter.TypewriterBlockEntity;
 import de.knito.typestones.typewriter.TypewriterStatus;
 
-/** Getting a pencil from the Typewriter, and writing a line with it. */
+/** Getting a pencil from the Typewriter, writing a line with it, and retiring it. */
 public class PencilTest {
 	@GameTest
 	public void pencilCostsStickAndStone(GameTestHelper helper) {
@@ -118,6 +123,51 @@ public class PencilTest {
 		helper.assertTrue(helper.getLevel().getBlockEntity(second.relative(right)) instanceof TypestoneBlockEntity stone
 				&& stone.letter().equals(letters.get(2)), "The B is missing");
 		helper.succeed();
+	}
+
+	@GameTest
+	public void emptyPencilGoesIntoPot(GameTestHelper helper) {
+		BlockPos pos = new BlockPos(1, 1, 1);
+		helper.setBlock(pos, Blocks.FLOWER_POT);
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		Dyes dyes = new Dyes(DyeColor.RED, Optional.of(DyeColor.BLUE));
+		ItemStack pencil = new ItemStack(ModPencil.ITEM);
+		pencil.set(ModComponents.DYES, dyes);
+		player.setItemInHand(InteractionHand.MAIN_HAND, pencil);
+
+		ItemStack writing = ModPencil.pencil(GlobalPos.of(helper.getLevel().dimension(), BlockPos.ZERO), List.of(Letters.classic('A')), dyes);
+		player.setItemInHand(InteractionHand.OFF_HAND, writing);
+		helper.assertFalse(PottedPencilBlock.pot(helper.getLevel(), helper.absolutePos(pos), player, InteractionHand.OFF_HAND),
+				"A pencil with an unwritten line went into the pot");
+
+		helper.assertTrue(PottedPencilBlock.pot(helper.getLevel(), helper.absolutePos(pos), player, InteractionHand.MAIN_HAND),
+				"The empty pencil didn't go into the pot");
+		helper.assertBlockPresent(ModPencil.POTTED, pos);
+		helper.assertTrue(player.getMainHandItem().isEmpty(), "The pencil is still in the hand");
+
+		helper.getLevel().destroyBlock(helper.absolutePos(pos), true);
+		List<ItemEntity> drops = helper.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(helper.absolutePos(pos)).inflate(2));
+		helper.assertTrue(drops.stream().anyMatch(d -> d.getItem().is(Items.FLOWER_POT)), "No flower pot dropped");
+		helper.assertTrue(drops.stream().anyMatch(d -> PencilToss.isEmptyPencil(d.getItem())
+				&& dyes.equals(d.getItem().get(ModComponents.DYES))), "The pencil didn't drop in its colors");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void onlyEmptyPencilBursts(GameTestHelper helper) {
+		BlockPos at = helper.absolutePos(new BlockPos(1, 2, 1));
+		ItemEntity empty = new ItemEntity(helper.getLevel(), at.getX(), at.getY(), at.getZ(), new ItemStack(ModPencil.ITEM));
+		ItemEntity writing = new ItemEntity(helper.getLevel(), at.getX(), at.getY(), at.getZ(),
+				ModPencil.pencil(GlobalPos.of(helper.getLevel().dimension(), BlockPos.ZERO), List.of(Letters.classic('A')), Dyes.DEFAULT));
+		helper.getLevel().addFreshEntity(empty);
+		helper.getLevel().addFreshEntity(writing);
+		PencilToss.thrown(empty);
+		PencilToss.thrown(writing);
+		helper.runAfterDelay(20, () -> {
+			helper.assertTrue(empty.isRemoved(), "The empty pencil didn't burst");
+			helper.assertFalse(writing.isRemoved(), "A pencil with an unwritten line burst");
+			helper.succeed();
+		});
 	}
 
 	private static void click(GameTestHelper helper, ServerPlayer player, BlockPos absolute, Direction face) {
