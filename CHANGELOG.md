@@ -20,6 +20,11 @@ First version for Minecraft 26.3 (Fabric). Needed on client and server.
 - Letter library per world: letters baked by players are saved with the world, and each player's game
   fetches a letter from the server the first time it shows a stone with it (limits per player and
   minute, at most 32,768 letters per world).
+- Pencil: the Typewriter's Pencil button makes one from a stick and a smooth stone. It places the last
+  started line stone by stone from the Typewriter's output inventory: click the last stone to go on to
+  its right, click elsewhere to start a new row, sneak-click to put the last stone back. It keeps the
+  Typewriter's chunk loaded for 5 minutes after each use (same dimension only). An empty pencil thrown
+  away bursts into a tiny firework in its colors; put into a flower pot it earns "Potted Pencil".
 - Commands: `/typestones letters` counts the library, `/typestones letter [hash]` shows a letter's data
   (without hash: the Typestone in hand), `/typestones letter <hash> remove` (operators) removes one.
 - Characters: the set of Billboard Engine (A–Z, a–z, 0–9, punctuation, Ä Ö Ü ä ö ü ß, ° · €).

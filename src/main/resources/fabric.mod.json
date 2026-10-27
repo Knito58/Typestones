@@ -25,6 +25,7 @@
 		]
 	},
 	"mixins": [
+		"typestones.mixins.json",
 		{
 			"config": "typestones.client.mixins.json",
 			"environment": "client"

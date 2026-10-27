@@ -58,5 +58,8 @@
 	"item.typestones.pencil.written": "Line written",
 	"item.typestones.pencil.gone": "The last stone is no longer there",
 	"item.typestones.pencil.other_dimension": "The pencil's Typewriter is in another dimension",
-	"item.typestones.pencil.no_typewriter": "The pencil's Typewriter is gone"
+	"item.typestones.pencil.no_typewriter": "The pencil's Typewriter is gone",
+	"block.typestones.potted_pencil": "Potted Pencil",
+	"advancements.typestones.potted_pencil.title": "Potted Pencil",
+	"advancements.typestones.potted_pencil.description": "Retire a pencil whose line is written to a flower pot"
 }

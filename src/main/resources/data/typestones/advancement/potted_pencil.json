@@ -1,0 +1,20 @@
+{
+	"parent": "minecraft:husbandry/root",
+	"display": {
+		"icon": {
+			"id": "typestones:pencil"
+		},
+		"title": {
+			"translate": "advancements.typestones.potted_pencil.title"
+		},
+		"description": {
+			"translate": "advancements.typestones.potted_pencil.description"
+		},
+		"frame": "task"
+	},
+	"criteria": {
+		"potted": {
+			"trigger": "minecraft:impossible"
+		}
+	}
+}
