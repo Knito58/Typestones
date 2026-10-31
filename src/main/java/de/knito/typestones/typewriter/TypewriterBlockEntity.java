@@ -121,7 +121,11 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 		}
 
 		public PictureTile tile(int index) {
-			return new PictureTile(hash, cols, rows, index % cols, index / cols, plane);
+			return tileAt(index % cols, index / cols);
+		}
+
+		public PictureTile tileAt(int col, int row) {
+			return new PictureTile(hash, cols, rows, col, row, plane);
 		}
 	}
 
