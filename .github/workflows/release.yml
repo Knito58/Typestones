@@ -69,7 +69,9 @@ jobs:
             changelog: $log, changelogType: "markdown", displayName: $name,
             gameVersions: $gv, releaseType: "release",
             relations: {projects: [
-              {slug: "fabric-api", type: "requiredDependency"}
+              {slug: "fabric-api", type: "requiredDependency"},
+              {slug: "modmenu", type: "optionalDependency"},
+              {slug: "cc-tweaked", type: "optionalDependency"}
             ]}
           }')
           curl -sS --fail-with-body -H "X-Api-Token: $CF_TOKEN" --form-string "metadata=$META" -F "file=@$JAR" \

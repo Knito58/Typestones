@@ -1,17 +1,24 @@
 # Typestones
 
 Fabric mod for Minecraft 26.3: smooth stone blocks that carry a letter on all six sides, in two dye
-colors (letter and optional background). The Typewriter makes them from a typed line of text.
+colors (letter and optional background), and picture stones that together show an image. The
+Typewriter makes them from a typed line of text, or from an image a program sends it.
 
-Work in progress. Planned for the first version:
-
-- **Typestone blocks** with the character set of Billboard Engine (A–Z, a–z, 0–9, punctuation,
-  Ä Ö Ü ä ö ü ß, ° · €). Top and bottom follow the placement direction, so text on floors and
-  ceilings reads correctly. A broken block drops itself with letter and colors.
-- **Typewriter**: takes smooth stone and dyes from inventories on any side, makes one block every
+- **Typestones**: any character of any font installed on the player's computer, at 16, 32 or 64 px,
+  or the built-in classic face. Top and bottom follow the placement direction, so text reads right
+  on walls, floors and ceilings. A broken stone drops itself with letter and colors. No recipes per
+  letter, so recipe viewers stay clean.
+- **Typewriter**: takes smooth stone and dyes from inventories on any side, makes one stone every
   5 ticks and puts it into the inventory at its back. Ghost slots for letter and background dye,
-  buttons for A–Z, 0–9 and all characters, repeat up to 64 times. A space makes a plain block.
-- No crafting recipes for the letter blocks, so recipe viewers stay clean.
+  buttons for A–Z, 0–9 and every character, repeat up to 64 times.
+- **Pencil**: places the Typewriter's line or picture in the world, stone by stone, straight from its
+  output. Empty pencils are refilled by the Typewriter.
+- **Pictures** (needs [Billboard API](https://github.com/Knito58/Billboard-API) or CC: Tweaked): a
+  program has the Typewriter turn a PNG, JPEG or GIF into picture stones, for one smooth stone and one
+  RGB dye each. The Lua functions are listed in `CHANGELOG.md`.
+- Optional: Mod Menu for the settings screen.
+
+See `CHANGELOG.md` for everything in detail.
 
 ## Font faces
 
@@ -21,7 +28,7 @@ rectangles in the letter dye, so no textures are needed. A stone stores only a h
 pixels.
 
 - `fonts/classic.txt`: Billboard Engine's 5×7 dot-matrix font, as editable text (`#` = ink). This is
-  the face the game uses for now.
+  the built-in classic face; fonts chosen in the Typewriter are baked in the game instead.
 - Any `.ttf` or `.otf` file put into `fonts/` becomes a face named after the file. The font must
   have every character of the set, otherwise the generator lists the missing ones and stops.
 
@@ -39,7 +46,7 @@ committed letter files no longer match `fonts/`.
 
 You need JDK 25 (`java -version` and `javac -version` must both say 25), git and IntelliJ IDEA.
 
-1. In IntelliJ: **File → New → Project from Version Control**, URL `https://github.com/Knito58/typestones`.
+1. In IntelliJ: **File → New → Project from Version Control**, URL `https://github.com/Knito58/Typestones`.
 2. Wait until the Gradle import finishes; the first time it downloads Minecraft and Fabric.
 3. Gradle tool window: **Tasks → fabric → runClient**.
 
