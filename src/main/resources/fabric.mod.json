@@ -22,6 +22,9 @@
 		],
 		"client": [
 			"de.knito.typestones.client.TypestonesClient"
+		],
+		"modmenu": [
+			"de.knito.typestones.client.config.ModMenuEntry"
 		]
 	},
 	"mixins": [
@@ -36,5 +39,10 @@
 		"minecraft": "~26.3",
 		"java": ">=25",
 		"fabric-api": "*"
+	},
+	"suggests": {
+		"billboard_api": "*",
+		"computercraft": "*",
+		"modmenu": "*"
 	}
 }

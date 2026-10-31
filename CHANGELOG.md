@@ -38,6 +38,20 @@ First version for Minecraft 26.3 (Fabric). Needed on client and server.
   <file> <cols> <rows>` (PNG or JPEG from the world's data/typestones/import folder, scaled to fill
   and cut at two sides to keep its proportions), `/typestones picture remove <hash>`, and
   `/typestones pictures` counts them.
-- RGB dye: black, white, red, green and blue dye make 5 RGB dye (shapeless). Picture stones will cost
-  one each.
+- RGB dye: black, white, red, green and blue dye make 8 RGB dye (shapeless). Picture stones will cost
+  one each. The dye and its recipe only show when Billboard API or CC: Tweaked is installed, because
+  only their programs can type pictures.
+- Settings in `config/typestones.properties`, also in game through Mod Menu (optional): resolution of
+  new pictures (16, 32 or 64 px per stone; pictures keep the resolution they were made with), largest
+  picture (8 x 8 stones by default, up to 16 x 16), and how far picture stones are drawn (4 chunks by
+  default).
+- Pictures keep their own resolution (16, 32 or 64 px per stone; the first pictures are 32 px), may
+  have transparent pixels that show the plain stone beneath, and can be made for a wall or lying
+  flat, so their stones stand or lie that way whatever side they are clicked on. Images go in as
+  `fit` (whole image, transparent bars), `fill` (covers all, cuts what sticks out) or `stretch`,
+  the words of the Billboard Engine.
+- The Typewriter types pictures for programs: one smooth stone and one RGB dye per picture stone,
+  transparent pixels included. A picture job starts also when items are missing (the program gets a
+  warning), waits, and goes on by itself when the inputs are refilled. Programs can ask for the cost
+  first. Image files: PNG, JPEG or GIF (first frame), at most 4 MB and 4096 x 4096 pixels.
 - Characters: the set of Billboard Engine (A–Z, a–z, 0–9, punctuation, Ä Ö Ü ä ö ü ß, ° · €).

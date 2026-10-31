@@ -43,6 +43,7 @@ import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.fabricmc.loader.api.FabricLoader;
 
 import de.knito.typestones.network.PicturePayloads;
 import de.knito.typestones.picture.Picture;
@@ -57,7 +58,7 @@ import de.knito.typestones.picture.PictureTile;
 public class ModPictures {
 	private static final ResourceKey<Item> RGB_DYE_KEY = ResourceKey.create(Registries.ITEM, Typestones.id("rgb_dye"));
 
-	/** One per picture stone; crafted from black, white, red, green and blue dye. */
+	/** One per picture stone; eight are crafted from black, white, red, green and blue dye. */
 	public static final Item RGB_DYE = Registry.register(BuiltInRegistries.ITEM, RGB_DYE_KEY,
 			new Item(new Item.Properties().setId(RGB_DYE_KEY)));
 
@@ -68,8 +69,17 @@ public class ModPictures {
 	/** Pictures asked for by a player in the current minute: tick the minute started, and count. */
 	private static final Map<UUID, int[]> USAGE = new HashMap<>();
 
+	/** Mod ids of the mods whose programs can type pictures; without one, pictures and their dye stay hidden. */
+	public static final List<String> SCRIPTING_MODS = List.of("billboard_api", "computercraft");
+
+	public static boolean scriptingAvailable() {
+		return SCRIPTING_MODS.stream().anyMatch(FabricLoader.getInstance()::isModLoaded);
+	}
+
 	public static void initialize() {
-		CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.INGREDIENTS).register(tab -> tab.accept(RGB_DYE));
+		if (scriptingAvailable()) {
+			CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.INGREDIENTS).register(tab -> tab.accept(RGB_DYE));
+		}
 
 		PayloadTypeRegistry.serverboundPlay().register(PicturePayloads.Request.TYPE, PicturePayloads.Request.STREAM_CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(PicturePayloads.Part.TYPE, PicturePayloads.Part.STREAM_CODEC);
@@ -111,10 +121,15 @@ public class ModPictures {
 
 	/** The Typestones that carry the picture, one per tile, row by row from the top left. */
 	public static List<ItemStack> stones(Picture picture) {
+		return stones(picture, PictureTile.Plane.ANY);
+	}
+
+	/** The same, for a picture that always stands or always lies, whatever side the stones are clicked on. */
+	public static List<ItemStack> stones(Picture picture, PictureTile.Plane plane) {
 		ItemStack[] stones = new ItemStack[picture.cols() * picture.rows()];
 		for (int row = 0; row < picture.rows(); row++) {
 			for (int col = 0; col < picture.cols(); col++) {
-				stones[row * picture.cols() + col] = ModBlocks.TYPESTONE_ITEM.pictureStack(PictureTile.of(picture, col, row));
+				stones[row * picture.cols() + col] = ModBlocks.TYPESTONE_ITEM.pictureStack(PictureTile.of(picture, col, row, plane));
 			}
 		}
 		return List.of(stones);
@@ -195,7 +210,8 @@ public class ModPictures {
 			context.getSource().sendFailure(Component.translatable("commands.typestones.picture.no_file", name, folder.toString()));
 			return 0;
 		}
-		Picture picture = Picture.fit(image, IntegerArgumentType.getInteger(context, "cols"), IntegerArgumentType.getInteger(context, "rows"));
+		Picture picture = Picture.of(image, IntegerArgumentType.getInteger(context, "cols"), IntegerArgumentType.getInteger(context, "rows"),
+				TypestonesConfig.get().pictureResolution(), Picture.Mode.FILL);
 		return give(context, picture, name);
 	}
 

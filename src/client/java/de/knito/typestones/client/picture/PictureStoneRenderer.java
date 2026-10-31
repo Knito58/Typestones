@@ -21,6 +21,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
+import de.knito.typestones.TypestonesConfig;
 import de.knito.typestones.block.TypestoneBlock;
 import de.knito.typestones.block.TypestoneBlockEntity;
 import de.knito.typestones.picture.PictureTile;
@@ -99,8 +100,9 @@ public class PictureStoneRenderer implements BlockEntityRenderer<TypestoneBlockE
 		if (state.texture == null || front == null && back == null) {
 			return;
 		}
-		// Drawn later in the frame: only the sides themselves go along, not the reused state.
-		collector.submitCustomGeometry(poseStack, RenderTypes.entitySolid(state.texture), (pose, consumer) -> {
+		// Drawn later in the frame: only the sides themselves go along, not the reused state. Cutout:
+		// transparent pixels show the plain stone of the block model beneath.
+		collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(state.texture), (pose, consumer) -> {
 			if (front != null) {
 				quad(pose, consumer, front);
 			}
@@ -134,9 +136,9 @@ public class PictureStoneRenderer implements BlockEntityRenderer<TypestoneBlockE
 				.setNormal(pose, face.getStepX(), face.getStepY(), face.getStepZ());
 	}
 
-	/** Pictures are seen from afar; vanilla's 64 blocks would cut big walls off. */
+	/** The view distance of the settings, 4 chunks unless changed. */
 	@Override
 	public int getViewDistance() {
-		return 128;
+		return TypestonesConfig.get().viewBlocks();
 	}
 }

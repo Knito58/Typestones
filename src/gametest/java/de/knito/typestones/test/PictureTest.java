@@ -1,5 +1,6 @@
 package de.knito.typestones.test;
 
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,6 +33,7 @@ import de.knito.typestones.ModBlocks;
 import de.knito.typestones.ModComponents;
 import de.knito.typestones.ModPictures;
 import de.knito.typestones.Typestones;
+import de.knito.typestones.TypestonesConfig;
 import de.knito.typestones.block.TypestoneBlock;
 import de.knito.typestones.block.TypestoneBlockEntity;
 import de.knito.typestones.picture.Picture;
@@ -46,7 +48,7 @@ public class PictureTest {
 		Picture picture = ModPictures.testPicture(3, 2);
 		helper.assertTrue(picture.width() == 3 * Picture.PIXELS && picture.height() == 2 * Picture.PIXELS, "Wrong picture size");
 		try {
-			Picture back = Picture.fromPng(picture.toPng());
+			Picture back = Picture.fromPng(picture.toPng(), picture.cols(), picture.rows());
 			helper.assertTrue(back.hash().equals(picture.hash()) && back.cols() == 3 && back.rows() == 2,
 					"The picture changed in its PNG");
 		} catch (IOException e) {
@@ -88,7 +90,7 @@ public class PictureTest {
 			helper.assertTrue(library.add(picture, info, folder) == PictureLibrary.Added.NEW, "First add is not NEW");
 			helper.assertTrue(library.add(picture, info, folder) == PictureLibrary.Added.KNOWN, "Second add is not KNOWN");
 			byte[] png = library.png(picture.hash(), folder);
-			helper.assertTrue(png != null && Picture.fromPng(png).equals(picture), "The PNG file doesn't hold the picture");
+			helper.assertTrue(png != null && Picture.fromPng(png, picture.cols(), picture.rows()).equals(picture), "The PNG file doesn't hold the picture");
 		} catch (IOException e) {
 			throw new AssertionError(e);
 		}
@@ -123,10 +125,23 @@ public class PictureTest {
 	}
 
 	@GameTest
-	public void rgbDyeRecipeLoads(GameTestHelper helper) {
+	public void rgbDyeRecipeOnlyWithScripting(GameTestHelper helper) {
+		// Without Billboard API or CC: Tweaked nothing can make pictures, so the dye has no recipe.
 		var key = ResourceKey.create(Registries.RECIPE, Typestones.id("rgb_dye"));
-		helper.assertTrue(helper.getLevel().recipeAccess().byKey(key).isPresent(), "The RGB dye recipe did not load");
+		helper.assertTrue(helper.getLevel().recipeAccess().byKey(key).isPresent() == ModPictures.scriptingAvailable(),
+				"The RGB dye recipe should load exactly when a scripting mod is there");
 		helper.assertTrue(ModPictures.RGB_DYE != null, "No RGB dye");
+		helper.succeed();
+	}
+
+	/** Settings out of range fall back or are clamped instead of breaking pictures. */
+	@GameTest
+	public void configKeepsItsLimits(GameTestHelper helper) {
+		TypestonesConfig config = new TypestonesConfig(48, 0, 99, 50);
+		helper.assertTrue(config.pictureResolution() == 32, "Unknown resolution kept: " + config.pictureResolution());
+		helper.assertTrue(config.maxCols() == 1 && config.maxRows() == Picture.MAX_STONES, "Size not clamped: " + config);
+		helper.assertTrue(config.viewChunks() == TypestonesConfig.MAX_VIEW_CHUNKS, "View distance not clamped: " + config);
+		helper.assertTrue(TypestonesConfig.DEFAULT.viewBlocks() == 64, "Default view distance is not 4 chunks");
 		helper.succeed();
 	}
 
@@ -158,6 +173,61 @@ public class PictureTest {
 		place(helper, player, ModPictures.stones(ModPictures.testPicture(1, 1)).getFirst(), wall, Direction.NORTH);
 		BlockState standing = helper.getLevel().getBlockState(wall.north());
 		helper.assertTrue(standing.is(ModBlocks.TYPESTONE) && !standing.getValue(TypestoneBlock.FLAT), "A stone on a wall doesn't stand");
+		helper.succeed();
+	}
+
+	/** A picture made for a wall stands even when clicked onto a floor; one made flat lies even on a wall. */
+	@GameTest
+	public void stonesLieAsTheirPlaneSays(GameTestHelper helper) {
+		Picture picture = ModPictures.testPicture(1, 1);
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		helper.setBlock(new BlockPos(2, 1, 2), Blocks.STONE);
+		BlockPos ground = helper.absolutePos(new BlockPos(2, 1, 2));
+
+		place(helper, player, ModPictures.stones(picture, PictureTile.Plane.WALL).getFirst(), ground, Direction.UP);
+		BlockState wall = helper.getLevel().getBlockState(ground.above());
+		helper.assertTrue(wall.is(ModBlocks.TYPESTONE) && !wall.getValue(TypestoneBlock.FLAT), "A wall picture lies flat on the floor");
+
+		place(helper, player, ModPictures.stones(picture, PictureTile.Plane.FLAT).getFirst(), ground, Direction.NORTH);
+		BlockState flat = helper.getLevel().getBlockState(ground.north());
+		helper.assertTrue(flat.is(ModBlocks.TYPESTONE) && flat.getValue(TypestoneBlock.FLAT), "A floor picture stands on the wall");
+
+		PictureTile tile = PictureTile.of(picture, 0, 0, PictureTile.Plane.FLAT);
+		Tag saved = PictureTile.CODEC.encodeStart(NbtOps.INSTANCE, tile).getOrThrow();
+		helper.assertTrue(PictureTile.CODEC.parse(NbtOps.INSTANCE, saved).getOrThrow().equals(tile), "The plane is lost when saved");
+		helper.succeed();
+	}
+
+	/**
+	 * Fit keeps the whole image and leaves transparent bars, fill and stretch cover every pixel, and the
+	 * resolution stays with the picture through its PNG.
+	 */
+	@GameTest
+	public void picturesKeepModeResolutionAndTransparency(GameTestHelper helper) {
+		BufferedImage wide = new BufferedImage(200, 100, BufferedImage.TYPE_INT_RGB);
+		for (int y = 0; y < 100; y++) {
+			for (int x = 0; x < 200; x++) {
+				wide.setRGB(x, y, 0xC03020);
+			}
+		}
+		Picture fit = Picture.of(wide, 2, 2, 16, Picture.Mode.FIT);
+		helper.assertTrue(fit.pixels() == 16 && fit.width() == 32 && fit.height() == 32, "Wrong size at 16 px");
+		helper.assertTrue(fit.isTransparent(16, 1) && fit.isTransparent(16, 30) && !fit.isTransparent(16, 16) && fit.hasTransparency(),
+				"Fit should leave transparent bars above and below a wide image");
+		helper.assertTrue(!Picture.of(wide, 2, 2, 16, Picture.Mode.FILL).hasTransparency(), "Fill left a gap");
+		helper.assertTrue(!Picture.of(wide, 2, 2, 16, Picture.Mode.STRETCH).hasTransparency(), "Stretch left a gap");
+		helper.assertTrue(!Picture.of(wide, 2, 2, 16, Picture.Mode.FILL).hash().equals(Picture.of(wide, 2, 2, 32, Picture.Mode.FILL).hash()),
+				"Two resolutions, same hash");
+
+		Picture sharp = Picture.of(wide, 1, 1, 64, Picture.Mode.FIT);
+		try {
+			Picture back = Picture.fromPng(sharp.toPng(), 1, 1);
+			helper.assertTrue(back.pixels() == 64 && back.equals(sharp) && back.isTransparent(32, 2), "64 px picture changed in its PNG");
+		} catch (IOException e) {
+			throw new AssertionError("Can't read the picture's own PNG", e);
+		}
+		helper.assertTrue(Picture.Mode.of("fill").orElseThrow() == Picture.Mode.FILL && Picture.Mode.of("crop").isEmpty(),
+				"Mode names are not the Billboard ones");
 		helper.succeed();
 	}
 

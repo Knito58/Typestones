@@ -36,6 +36,19 @@ fabricApi {
 }
 tasks.named('check') { dependsOn 'runGameTest' }
 
+repositories {
+	// Mod Menu, a soft dependency: compiled against, not shipped.
+	maven {
+		url = "https://maven.terraformersmc.com/releases"
+		content { includeGroup "com.terraformersmc" }
+	}
+	// CC: Tweaked, a soft dependency: compiled against, not shipped.
+	maven {
+		url = "https://maven.squiddev.cc"
+		content { includeGroup "cc.tweaked" }
+	}
+}
+
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
@@ -43,6 +56,11 @@ dependencies {
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// Soft dependencies: Typestones works without them and only uses them when they are installed.
+	compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+	compileOnly("cc.tweaked:cc-tweaked-${project.minecraft_version}-core-api:${project.cc_tweaked_version}") { transitive = false }
+	compileOnly("cc.tweaked:cc-tweaked-${project.minecraft_version}-fabric-api:${project.cc_tweaked_version}") { transitive = false }
 }
 
 // The glyph generator: a small Java program, not part of the mod. It draws the glyph textures of every
@@ -50,6 +68,18 @@ dependencies {
 // A font from elsewhere, e.g. one installed on the computer:
 //   ./gradlew generateGlyphs -Pfont=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf -Pface=dejavu_bold
 sourceSets {
+	// Billboard API, a soft dependency without a maven: a compile-only copy of its API package.
+	billboardApi {
+		compileClasspath += configurations.compileClasspath
+	}
+	main {
+		compileClasspath += billboardApi.output
+	}
+	// The game tests drive the Lua functions directly, so they get the copy at run time too.
+	gametest {
+		compileClasspath += billboardApi.output
+		runtimeClasspath += billboardApi.output
+	}
 	glyphgen {
 		compileClasspath += sourceSets.main.output
 		runtimeClasspath += sourceSets.main.output

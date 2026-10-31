@@ -70,5 +70,20 @@
 	"commands.typestones.picture.no_file": "Can't read the picture %s. Put PNG or JPEG files into %s.",
 	"commands.typestones.picture.not_saved": "Can't save the picture: %s",
 	"commands.typestones.picture.unknown": "No picture with hash %s.",
-	"commands.typestones.picture.removed": "Removed picture %s. Stones with it now show as plain stone."
+	"commands.typestones.picture.removed": "Removed picture %s. Stones with it now show as plain stone.",
+	"config.typestones.title": "Typestones settings",
+	"config.typestones.resolution": "Picture resolution",
+	"config.typestones.pixels": "%s px per stone",
+	"config.typestones.resolution.tooltip": "Pixels per stone side of new pictures. Pictures already made keep their own resolution.",
+	"config.typestones.resolution.warning": "64 px is sharp, but many pictures in view cost frames and memory. Pictures already made keep their own resolution.",
+	"config.typestones.resolution.warning_line": "64 px per stone: watch your frame rate with big picture walls.",
+	"config.typestones.max_cols": "Largest picture, wide",
+	"config.typestones.max_rows": "Largest picture, high",
+	"config.typestones.stones": "%s stones",
+	"config.typestones.size.tooltip": "How many stones a new picture may cover. Each stone costs one RGB dye.",
+	"config.typestones.view": "Pictures drawn up to",
+	"config.typestones.chunks": "%s chunks",
+	"config.typestones.view.tooltip": "Picture stones further away are not drawn. Less is faster.",
+	"config.typestones.server_note": "On a server, the server's own settings decide resolution and size.",
+	"gui.typestones.status.needs_rgb_dye": "Waiting for RGB dye"
 }

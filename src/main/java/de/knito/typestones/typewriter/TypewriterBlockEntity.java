@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import org.jspecify.annotations.Nullable;
 
@@ -35,15 +36,20 @@ import net.fabricmc.fabric.api.menu.v1.ExtendedMenuProvider;
 import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;
 import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 
 import de.knito.typestones.ModBlocks;
 import de.knito.typestones.ModPencil;
+import de.knito.typestones.ModPictures;
 import de.knito.typestones.ModTypewriter;
 import de.knito.typestones.block.Dyes;
 import de.knito.typestones.block.TypestoneItem;
 import de.knito.typestones.letter.LetterLibrary;
 import de.knito.typestones.letter.Letters;
+import de.knito.typestones.picture.Picture;
+import de.knito.typestones.picture.PictureTile;
+import de.knito.typestones.script.TypewriterScript;
 
 /**
  * Makes one Typestone per character of a line of text, every {@link #INTERVAL} ticks. The letters come
@@ -76,16 +82,55 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 
 	private static final Codec<List<String>> LETTERS_CODEC = Codec.STRING.listOf();
 
+	/** A picture being typed: one stone per tile, row by row from the top left. */
+	public record PictureJob(String hash, int cols, int rows, PictureTile.Plane plane) {
+		static final Codec<PictureJob> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+				Codec.STRING.fieldOf("hash").forGetter(PictureJob::hash),
+				Codec.intRange(1, Picture.MAX_STONES).fieldOf("cols").forGetter(PictureJob::cols),
+				Codec.intRange(1, Picture.MAX_STONES).fieldOf("rows").forGetter(PictureJob::rows),
+				PictureTile.Plane.CODEC.optionalFieldOf("plane", PictureTile.Plane.WALL).forGetter(PictureJob::plane)
+		).apply(instance, PictureJob::new));
+
+		public int stones() {
+			return cols * rows;
+		}
+
+		PictureTile tile(int index) {
+			return new PictureTile(hash, cols, rows, index % cols, index / cols, plane);
+		}
+	}
+
+	/** What a job takes and what the inputs hold right now. */
+	public record Cost(int stones, int rgbDye, long haveStones, long haveRgbDye) {
+		public boolean enough() {
+			return haveStones >= stones && haveRgbDye >= rgbDye;
+		}
+
+		/** The status the job would wait in first, or null when everything is there. */
+		public @Nullable TypewriterStatus missing() {
+			if (haveStones < stones) {
+				return TypewriterStatus.NEEDS_STONE;
+			}
+			return haveRgbDye < rgbDye ? TypewriterStatus.NEEDS_RGB_DYE : null;
+		}
+	}
+
 	private String text = "";
 	private int repeat = 1;
 	private FontSettings font = FontSettings.DEFAULT;
 	/** The job: one letter hash per character and the repeat as they were at Start, and how many blocks are made. */
 	private List<String> jobLetters = List.of();
+	/** The text of jobLetters, so a program can start the same line again without the font being baked anew. */
+	private String jobText = "";
+	/** Set while the job is a picture instead of jobLetters. */
+	private @Nullable PictureJob pictureJob;
 	private int jobRepeat = 1;
 	private int made;
 	private boolean running;
 	private int ticks;
 	private TypewriterStatus status = TypewriterStatus.IDLE;
+	/** The program that claimed the Typewriter; not saved, a claim ends with the program. */
+	private TypewriterScript.@Nullable Holder holder;
 
 	/** Synced to the open screen: 0 = status, 1 = blocks made, 2 = blocks in the job, 3 = repeat. */
 	private final ContainerData data = new ContainerData() {
@@ -94,7 +139,7 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 			return switch (index) {
 				case 0 -> status.ordinal();
 				case 1 -> made;
-				case 2 -> jobLetters.size() * jobRepeat;
+				case 2 -> total();
 				case 3 -> repeat;
 				default -> 0;
 			};
@@ -168,6 +213,104 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 		return status;
 	}
 
+	public String text() {
+		return text;
+	}
+
+	/** Sets the line as a program does: cleaned for the current font, the rest of the settings kept. */
+	public void setText(String text) {
+		this.text = cleanText(text, font.isClassic());
+		setChanged();
+	}
+
+	public int repeat() {
+		return repeat;
+	}
+
+	public void setRepeat(int repeat) {
+		this.repeat = Math.clamp(repeat, 1, MAX_REPEAT);
+		setChanged();
+	}
+
+	public TypewriterScript.@Nullable Holder holder() {
+		return holder;
+	}
+
+	public void setHolder(TypewriterScript.@Nullable Holder holder) {
+		this.holder = holder;
+	}
+
+	public boolean isRunning() {
+		return running;
+	}
+
+	/** True while a picture job is not finished, also when it waits for items. */
+	public boolean isPainting() {
+		return running && pictureJob != null;
+	}
+
+	public @Nullable PictureJob pictureJob() {
+		return pictureJob;
+	}
+
+	/** Stones made in the running or last job. */
+	public int made() {
+		return made;
+	}
+
+	/** Stones in the running or last job. */
+	public int total() {
+		return pictureJob != null ? pictureJob.stones() : jobLetters.size() * jobRepeat;
+	}
+
+	/**
+	 * Starts the line for a program. A program can't bake letters, so with a font other than classic
+	 * this only works for the line last started in the screen, whose letters are in the library.
+	 */
+	public void startFromProgram(LetterLibrary library) {
+		if (font.isClassic()) {
+			start(List.of(), library);
+		} else if (text.equals(jobText) && !jobLetters.isEmpty()) {
+			start(jobLetters, library);
+		} else {
+			status = text.isEmpty() ? TypewriterStatus.NO_TEXT : TypewriterStatus.MISSING_LETTERS;
+		}
+	}
+
+	/**
+	 * Starts typing a picture that is already in the library: one smooth stone and one RGB dye per
+	 * stone. It starts also when items are missing; the job then waits for them.
+	 */
+	public void startPicture(Picture picture, PictureTile.Plane plane) {
+		pictureJob = new PictureJob(picture.hash(), picture.cols(), picture.rows(), plane);
+		made = 0;
+		running = true;
+		ticks = 0;
+		status = TypewriterStatus.RUNNING;
+		setChanged();
+	}
+
+	/** What a picture of that many stones takes, and what the inputs hold. */
+	public Cost pictureCost(int stones) {
+		if (level == null) {
+			return new Cost(stones, stones, 0, 0);
+		}
+		List<Storage<ItemVariant>> inputs = inputs(level, worldPosition, getBlockState().getValue(TypewriterBlock.FACING).getOpposite());
+		return new Cost(stones, stones, count(inputs, Items.SMOOTH_STONE), count(inputs, ModPictures.RGB_DYE));
+	}
+
+	private static long count(List<Storage<ItemVariant>> inputs, Item item) {
+		long count = 0;
+		for (Storage<ItemVariant> input : inputs) {
+			for (StorageView<ItemVariant> view : input) {
+				if (!view.isResourceBlank() && view.getResource().isOf(item)) {
+					count += view.getAmount();
+				}
+			}
+		}
+		return count;
+	}
+
 	/** The letter hash of each character of the running or last job. */
 	public List<String> jobLetters() {
 		return jobLetters;
@@ -194,6 +337,8 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 			return;
 		}
 		jobLetters = job;
+		jobText = text;
+		pictureJob = null;
 		jobRepeat = repeat;
 		made = 0;
 		running = true;
@@ -214,7 +359,7 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 		}
 		typewriter.ticks = 0;
 		typewriter.status = typewriter.makeOne(level, pos, state);
-		if (typewriter.made >= typewriter.jobLetters.size() * typewriter.jobRepeat) {
+		if (typewriter.made >= typewriter.total()) {
 			typewriter.running = false;
 			typewriter.status = TypewriterStatus.DONE;
 		}
@@ -229,6 +374,9 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 			return TypewriterStatus.NO_OUTPUT;
 		}
 		List<Storage<ItemVariant>> inputs = inputs(level, pos, back);
+		if (pictureJob != null) {
+			return makePictureStone(output, inputs);
+		}
 
 		String glyph = jobLetters.get(made % jobLetters.size());
 		boolean inked = !glyph.equals(Letters.NONE);
@@ -251,6 +399,25 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 				return TypewriterStatus.NEEDS_BACKGROUND_DYE;
 			}
 			if (output.insert(ItemVariant.of(item.stack(glyph, dyes, 1)), 1, transaction) != 1) {
+				return TypewriterStatus.OUTPUT_FULL;
+			}
+			transaction.commit();
+		}
+		made++;
+		return TypewriterStatus.RUNNING;
+	}
+
+	/** The next stone of the picture job: one smooth stone and one RGB dye, all or nothing. */
+	private TypewriterStatus makePictureStone(Storage<ItemVariant> output, List<Storage<ItemVariant>> inputs) {
+		ItemStack stone = ModBlocks.TYPESTONE_ITEM.pictureStack(pictureJob.tile(made));
+		try (Transaction transaction = Transaction.openOuter()) {
+			if (missing(inputs, Items.SMOOTH_STONE, transaction)) {
+				return TypewriterStatus.NEEDS_STONE;
+			}
+			if (missing(inputs, ModPictures.RGB_DYE, transaction)) {
+				return TypewriterStatus.NEEDS_RGB_DYE;
+			}
+			if (output.insert(ItemVariant.of(stone), 1, transaction) != 1) {
 				return TypewriterStatus.OUTPUT_FULL;
 			}
 			transaction.commit();
@@ -330,9 +497,11 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 		jobLetters = input.read("job_letters", LETTERS_CODEC)
 				.map(saved -> List.copyOf(saved.subList(0, Math.min(saved.size(), MAX_TEXT_LENGTH))))
 				.orElseGet(() -> classicLetters(cleanText(input.getStringOr("job_text", ""), true)));
+		jobText = input.getStringOr("job_text_line", "");
+		pictureJob = input.read("job_picture", PictureJob.CODEC).orElse(null);
 		jobRepeat = Math.clamp(input.getIntOr("job_repeat", 1), 1, MAX_REPEAT);
 		made = Math.max(0, input.getIntOr("made", 0));
-		running = input.getBooleanOr("running", false) && !jobLetters.isEmpty();
+		running = input.getBooleanOr("running", false) && (!jobLetters.isEmpty() || pictureJob != null);
 		status = running ? TypewriterStatus.RUNNING : TypewriterStatus.IDLE;
 		dyeSamples.setItem(SLOT_LETTER, input.read("letter_dye", DyeColor.CODEC).map(c -> new ItemStack(dyeItem(c))).orElse(ItemStack.EMPTY));
 		dyeSamples.setItem(SLOT_BACKGROUND, input.read("background_dye", DyeColor.CODEC).map(c -> new ItemStack(dyeItem(c))).orElse(ItemStack.EMPTY));
@@ -349,6 +518,10 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 		output.putInt("baseline", font.baseline());
 		output.putInt("font_style", font.style());
 		output.store("job_letters", LETTERS_CODEC, jobLetters);
+		output.putString("job_text_line", jobText);
+		if (pictureJob != null) {
+			output.store("job_picture", PictureJob.CODEC, pictureJob);
+		}
 		output.putInt("job_repeat", jobRepeat);
 		output.putInt("made", made);
 		output.putBoolean("running", running);

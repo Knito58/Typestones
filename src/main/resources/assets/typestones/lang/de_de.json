@@ -70,5 +70,20 @@
 	"commands.typestones.picture.no_file": "Das Bild %s kann nicht gelesen werden. Lege PNG- oder JPEG-Dateien in %s ab.",
 	"commands.typestones.picture.not_saved": "Das Bild kann nicht gespeichert werden: %s",
 	"commands.typestones.picture.unknown": "Kein Bild mit dem Hash %s.",
-	"commands.typestones.picture.removed": "Bild %s entfernt. Steine damit zeigen jetzt glatten Stein."
+	"commands.typestones.picture.removed": "Bild %s entfernt. Steine damit zeigen jetzt glatten Stein.",
+	"config.typestones.title": "Typestones-Einstellungen",
+	"config.typestones.resolution": "Bildauflösung",
+	"config.typestones.pixels": "%s px je Stein",
+	"config.typestones.resolution.tooltip": "Pixel je Steinseite für neue Bilder. Fertige Bilder behalten ihre Auflösung.",
+	"config.typestones.resolution.warning": "64 px ist scharf, aber viele Bilder im Blick kosten Bilder pro Sekunde und Speicher. Fertige Bilder behalten ihre Auflösung.",
+	"config.typestones.resolution.warning_line": "64 px je Stein: bei großen Bildwänden auf die Bildrate achten.",
+	"config.typestones.max_cols": "Größtes Bild, breit",
+	"config.typestones.max_rows": "Größtes Bild, hoch",
+	"config.typestones.stones": "%s Steine",
+	"config.typestones.size.tooltip": "Wie viele Steine ein neues Bild belegen darf. Jeder Stein kostet einen RGB-Farbstoff.",
+	"config.typestones.view": "Bilder sichtbar bis",
+	"config.typestones.chunks": "%s Chunks",
+	"config.typestones.view.tooltip": "Weiter entfernte Bildsteine werden nicht gezeichnet. Weniger ist schneller.",
+	"config.typestones.server_note": "Auf einem Server bestimmen dessen Einstellungen Auflösung und Größe.",
+	"gui.typestones.status.needs_rgb_dye": "Wartet auf RGB-Farbstoff"
 }
