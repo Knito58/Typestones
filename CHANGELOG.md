@@ -15,6 +15,9 @@ First version for Minecraft 26.3 (Fabric). Needed on client and server.
 - Makes Typestones from a typed line of up to 128 characters, one stone every 5 ticks, repeated up
   to 64 times. Takes smooth stone and dyes from inventories on any side and puts the stones into the
   inventory at its back.
+- Old Typestones in the inputs are used again: a stone just like the next one wanted is moved to the
+  output for free, other Typestones (letters or pictures) are wiped and used before smooth stone.
+  Stones the running job still wants as they are are kept for it.
 - Dye settings as ghost slots for letter and background; buttons for A–Z, 0–9 and every character of
   the font.
 - Fonts: the built-in classic face (Billboard Engine's set), or any font installed on the player's
