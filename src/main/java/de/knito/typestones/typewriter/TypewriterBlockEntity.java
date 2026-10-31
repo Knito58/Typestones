@@ -16,6 +16,7 @@ import org.jspecify.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -534,7 +535,7 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 	}
 
 	/**
-	 * Makes a pencil from a stick and a smooth stone of the inputs: for the picture with this hash whose
+	 * Makes a pencil from a stick and a smooth stone of the inputs, or refills an empty pencil found there instead: for the picture with this hash whose
 	 * stones are in the output, or with an empty hash for the last job, a line in the current dyes or a
 	 * picture. A picture pencil lays its stones row by row. Empty when that fails; the status then says why.
 	 */
@@ -553,22 +554,52 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 		}
 		Direction back = getBlockState().getValue(TypewriterBlock.FACING).getOpposite();
 		List<Storage<ItemVariant>> inputs = inputs(level, worldPosition, back);
+		ItemStack refilled;
 		try (Transaction transaction = Transaction.openOuter()) {
-			if (missing(inputs, Items.STICK, transaction)) {
-				status = TypewriterStatus.NEEDS_STICK;
-				return ItemStack.EMPTY;
-			}
-			if (missing(inputs, Items.SMOOTH_STONE, transaction)) {
-				status = TypewriterStatus.NEEDS_STONE;
-				return ItemStack.EMPTY;
+			refilled = takeEmptyPencil(inputs, transaction);
+			if (refilled.isEmpty()) {
+				if (missing(inputs, Items.STICK, transaction)) {
+					status = TypewriterStatus.NEEDS_STICK;
+					return ItemStack.EMPTY;
+				}
+				if (missing(inputs, Items.SMOOTH_STONE, transaction)) {
+					status = TypewriterStatus.NEEDS_STONE;
+					return ItemStack.EMPTY;
+				}
 			}
 			transaction.commit();
 		}
+		ItemStack pencil;
 		if (picture != null) {
-			return ModPencil.picturePencil(GlobalPos.of(level.dimension(), worldPosition), picture);
+			pencil = ModPencil.picturePencil(GlobalPos.of(level.dimension(), worldPosition), picture);
+		} else {
+			Dyes dyes = new Dyes(dyeOf(dyeSamples.getItem(SLOT_LETTER)).orElse(DyeColor.BLACK), dyeOf(dyeSamples.getItem(SLOT_BACKGROUND)));
+			pencil = ModPencil.pencil(GlobalPos.of(level.dimension(), worldPosition), jobLetters, dyes);
 		}
-		Dyes dyes = new Dyes(dyeOf(dyeSamples.getItem(SLOT_LETTER)).orElse(DyeColor.BLACK), dyeOf(dyeSamples.getItem(SLOT_BACKGROUND)));
-		return ModPencil.pencil(GlobalPos.of(level.dimension(), worldPosition), jobLetters, dyes);
+		// A refilled pencil keeps the name it got on an anvil.
+		Component name = refilled.get(DataComponents.CUSTOM_NAME);
+		if (name != null) {
+			pencil.set(DataComponents.CUSTOM_NAME, name);
+		}
+		return pencil;
+	}
+
+	/** Takes one empty pencil (its line written) from the inputs; empty when there is none. */
+	private static ItemStack takeEmptyPencil(List<Storage<ItemVariant>> inputs, Transaction transaction) {
+		for (Storage<ItemVariant> input : inputs) {
+			ItemVariant empty = null;
+			for (StorageView<ItemVariant> view : input.nonEmptyViews()) {
+				ItemStack stack = view.getResource().toStack();
+				if (stack.is(ModPencil.ITEM) && !stack.has(ModComponents.PENCIL_LINE)) {
+					empty = view.getResource();
+					break;
+				}
+			}
+			if (empty != null && input.extract(empty, 1, transaction) == 1) {
+				return empty.toStack();
+			}
+		}
+		return ItemStack.EMPTY;
 	}
 
 	/** Takes one item from the first input that has it; true when none has it. */

@@ -11,6 +11,7 @@ import org.jspecify.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -84,6 +85,42 @@ public class PencilTest {
 		PencilLine.STREAM_CODEC.encode(buf, line);
 		helper.assertTrue(line.equals(PencilLine.STREAM_CODEC.decode(buf)), "The pencil line changed on the way");
 		helper.assertTrue(ModPencil.ITEM.getDefaultMaxStackSize() == 1, "Pencils must not stack");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void emptyPencilIsRefilled(GameTestHelper helper) {
+		BlockPos pos = new BlockPos(1, 1, 1);
+		helper.setBlock(pos, ModTypewriter.BLOCK.defaultBlockState().setValue(TypewriterBlock.FACING, Direction.NORTH));
+		helper.setBlock(pos.west(), Blocks.CHEST);
+		if (!(helper.getBlockEntity(pos, TypewriterBlockEntity.class) instanceof TypewriterBlockEntity typewriter)
+				|| !(helper.getBlockEntity(pos.west(), ChestBlockEntity.class) instanceof ChestBlockEntity chest)) {
+			throw helper.assertionException(Component.literal("Typewriter or chest missing"));
+		}
+		typewriter.dyeSamples().setItem(TypewriterBlockEntity.SLOT_LETTER, new ItemStack(TypewriterBlockEntity.dyeItem(DyeColor.RED)));
+		typewriter.applySettings("A", 1, FontSettings.DEFAULT);
+		typewriter.start(List.of(), new LetterLibrary());
+		typewriter.stop();
+		helper.assertTrue(typewriter.makePencil().isEmpty() && typewriter.status() == TypewriterStatus.NEEDS_STICK,
+				"Expected a line and no stick yet: " + typewriter.status());
+
+		ItemStack empty = new ItemStack(ModPencil.ITEM);
+		empty.set(DataComponents.CUSTOM_NAME, Component.literal("Old Faithful"));
+		chest.setItem(0, new ItemStack(Items.STICK));
+		chest.setItem(1, new ItemStack(Items.SMOOTH_STONE));
+		chest.setItem(2, empty);
+		ItemStack pencil = typewriter.makePencil();
+		helper.assertTrue(pencil.has(ModComponents.PENCIL_LINE), "No pencil from the empty one: " + typewriter.status());
+		helper.assertTrue(chest.getItem(2).isEmpty(), "The empty pencil is still in the chest");
+		helper.assertTrue(chest.getItem(0).getCount() == 1 && chest.getItem(1).getCount() == 1, "A refill cost a stick or a stone");
+		helper.assertTrue(Component.literal("Old Faithful").equals(pencil.get(DataComponents.CUSTOM_NAME)), "The refilled pencil lost its name");
+
+		// A pencil with a line left is not empty and stays where it is.
+		chest.setItem(2, pencil.copy());
+		ItemStack fresh = typewriter.makePencil();
+		helper.assertTrue(fresh.has(ModComponents.PENCIL_LINE) && chest.getItem(2).has(ModComponents.PENCIL_LINE)
+						&& chest.getItem(0).isEmpty() && chest.getItem(1).isEmpty(),
+				"A pencil with a line was taken for a refill");
 		helper.succeed();
 	}
 
@@ -287,6 +324,40 @@ public class PencilTest {
 		helper.assertTrue(drops.stream().anyMatch(d -> PencilToss.isEmptyPencil(d.getItem())
 				&& dyes.equals(d.getItem().get(ModComponents.DYES))), "The pencil didn't drop in its colors");
 		helper.succeed();
+	}
+
+	@GameTest
+	public void emptyPencilIsThrownLikeAnEgg(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		BlockPos at = helper.absolutePos(new BlockPos(1, 2, 1));
+		player.setPos(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+		player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModPencil.ITEM));
+		ModPencil.ITEM.use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
+		helper.assertTrue(player.getMainHandItem().isEmpty(), "The empty pencil is still in the hand");
+		AABB around = new AABB(at).inflate(8);
+		helper.assertTrue(helper.getLevel().getEntitiesOfClass(ItemEntity.class, around, d -> PencilToss.isEmptyPencil(d.getItem())).size() == 1,
+				"The thrown pencil isn't flying");
+		helper.runAfterDelay(20, () -> {
+			helper.assertTrue(helper.getLevel().getEntitiesOfClass(ItemEntity.class, around, d -> PencilToss.isEmptyPencil(d.getItem())).isEmpty(),
+					"The thrown pencil didn't burst");
+			helper.succeed();
+		});
+	}
+
+	@GameTest
+	public void droppedEmptyPencilBursts(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		BlockPos at = helper.absolutePos(new BlockPos(1, 2, 1));
+		ItemEntity dropped = new ItemEntity(helper.getLevel(), at.getX(), at.getY(), at.getZ(), new ItemStack(ModPencil.ITEM));
+		dropped.setThrower(player);
+		ItemEntity lost = new ItemEntity(helper.getLevel(), at.getX(), at.getY(), at.getZ(), new ItemStack(ModPencil.ITEM));
+		helper.getLevel().addFreshEntity(dropped);
+		helper.getLevel().addFreshEntity(lost);
+		helper.runAfterDelay(20, () -> {
+			helper.assertTrue(dropped.isRemoved(), "The pencil the player dropped didn't burst");
+			helper.assertFalse(lost.isRemoved(), "A pencil nobody threw burst");
+			helper.succeed();
+		});
 	}
 
 	@GameTest

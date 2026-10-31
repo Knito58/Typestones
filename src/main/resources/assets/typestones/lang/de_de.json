@@ -51,7 +51,7 @@
 	"item.typestones.pencil.next": "Nächster Stein: %s von %s",
 	"item.typestones.pencil.empty": "Seine Zeile ist geschrieben",
 	"gui.typestones.pencil": "Stift",
-	"gui.typestones.pencil_tooltip": "Bleistift für %s, %s.\nEr setzt die Steine aus dem Inventar hinten, Stein für Stein. Kostet einen Stock und einen glatten Stein.\nPfeile oder Mausrad: den letzten Auftrag oder ein anderes Bild in der Ausgabe wählen.",
+	"gui.typestones.pencil_tooltip": "Bleistift für %s, %s.\nEr setzt die Steine aus dem Inventar hinten, Stein für Stein. Kostet einen Stock und einen glatten Stein oder füllt einen leeren Bleistift aus den Eingängen nach.\nPfeile oder Mausrad: den letzten Auftrag oder ein anderes Bild in der Ausgabe wählen.",
 	"gui.typestones.status.no_line": "Erst einmal Start drücken",
 	"gui.typestones.status.needs_stick": "Ein Bleistift braucht einen Stock",
 	"item.typestones.pencil.missing": "Nächster Stein fehlt in der Truhe der Schreibmaschine: %s",

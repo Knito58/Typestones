@@ -23,8 +23,9 @@ First version for Minecraft 26.3 (Fabric). Needed on client and server.
 - Pencil: the Typewriter's Pencil button makes one from a stick and a smooth stone. It places the last
   started line stone by stone from the Typewriter's output inventory: click the last stone to go on to
   its right, click elsewhere to start a new row, sneak-click to put the last stone back. It keeps the
-  Typewriter's chunk loaded for 5 minutes after each use (same dimension only). An empty pencil thrown
-  away bursts into a tiny firework in its colors; put into a flower pot it earns "Potted Pencil".
+  Typewriter's chunk loaded for 5 minutes after each use (same dimension only). An empty pencil in the
+  inputs is refilled instead, for free, and keeps its anvil name. An empty pencil thrown
+  away (Q, dragged out of the inventory, or right-clicked like an egg) bursts into a tiny firework in its colors; put into a flower pot it earns "Potted Pencil".
 - Commands: `/typestones letters` counts the library, `/typestones letter [hash]` shows a letter's data
   (without hash: the Typestone in hand), `/typestones letter <hash> remove` (operators) removes one.
 - Pictures (first step; typing them will come with the Lua box of the Billboard API): a picture
