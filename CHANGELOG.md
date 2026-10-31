@@ -50,4 +50,8 @@ First version for Minecraft 26.3 (Fabric). Needed on client and server.
   flat, so their stones stand or lie that way whatever side they are clicked on. Images go in as
   `fit` (whole image, transparent bars), `fill` (covers all, cuts what sticks out) or `stretch`,
   the words of the Billboard Engine.
+- The Typewriter types pictures for programs: one smooth stone and one RGB dye per picture stone,
+  transparent pixels included. A picture job starts also when items are missing (the program gets a
+  warning), waits, and goes on by itself when the inputs are refilled. Programs can ask for the cost
+  first. Image files: PNG, JPEG or GIF (first frame), at most 4 MB and 4096 x 4096 pixels.
 - Characters: the set of Billboard Engine (A–Z, a–z, 0–9, punctuation, Ä Ö Ü ä ö ü ß, ° · €).

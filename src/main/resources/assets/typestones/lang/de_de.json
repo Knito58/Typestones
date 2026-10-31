@@ -84,5 +84,6 @@
 	"config.typestones.view": "Bilder sichtbar bis",
 	"config.typestones.chunks": "%s Chunks",
 	"config.typestones.view.tooltip": "Weiter entfernte Bildsteine werden nicht gezeichnet. Weniger ist schneller.",
-	"config.typestones.server_note": "Auf einem Server bestimmen dessen Einstellungen Auflösung und Größe."
+	"config.typestones.server_note": "Auf einem Server bestimmen dessen Einstellungen Auflösung und Größe.",
+	"gui.typestones.status.needs_rgb_dye": "Wartet auf RGB-Farbstoff"
 }

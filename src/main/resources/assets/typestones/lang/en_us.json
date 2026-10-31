@@ -84,5 +84,6 @@
 	"config.typestones.view": "Pictures drawn up to",
 	"config.typestones.chunks": "%s chunks",
 	"config.typestones.view.tooltip": "Picture stones further away are not drawn. Less is faster.",
-	"config.typestones.server_note": "On a server, the server's own settings decide resolution and size."
+	"config.typestones.server_note": "On a server, the server's own settings decide resolution and size.",
+	"gui.typestones.status.needs_rgb_dye": "Waiting for RGB dye"
 }
