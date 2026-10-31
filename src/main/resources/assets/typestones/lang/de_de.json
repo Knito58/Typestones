@@ -51,7 +51,7 @@
 	"item.typestones.pencil.next": "Nächster Stein: %s von %s",
 	"item.typestones.pencil.empty": "Seine Zeile ist geschrieben",
 	"gui.typestones.pencil": "Stift",
-	"gui.typestones.pencil_tooltip": "Gibt einen Bleistift, der die zuletzt gestartete Zeile Stein für Stein aus dem Inventar hinten setzt. Kostet einen Stock und einen glatten Stein.",
+	"gui.typestones.pencil_tooltip": "Holt einen Bleistift, der den letzten Auftrag Stein für Stein aus dem Inventar hinten setzt: eine Zeile oder ein Bild Reihe für Reihe. Kostet einen Stock und einen glatten Stein.",
 	"gui.typestones.status.no_line": "Erst einmal Start drücken",
 	"gui.typestones.status.needs_stick": "Ein Bleistift braucht einen Stock",
 	"item.typestones.pencil.missing": "Nächster Stein fehlt in der Truhe der Schreibmaschine: %s",
@@ -85,5 +85,11 @@
 	"config.typestones.chunks": "%s Chunks",
 	"config.typestones.view.tooltip": "Weiter entfernte Bildsteine werden nicht gezeichnet. Weniger ist schneller.",
 	"config.typestones.server_note": "Auf einem Server bestimmen dessen Einstellungen Auflösung und Größe.",
-	"gui.typestones.status.needs_rgb_dye": "Wartet auf RGB-Farbstoff"
+	"gui.typestones.status.needs_rgb_dye": "Wartet auf RGB-Farbstoff",
+	"gui.typestones.claimed": "Programm steuert · %s",
+	"item.typestones.pencil.too_far": "Der nächste Stein ist außer Reichweite",
+	"item.typestones.pencil.picture_written": "Bild gelegt",
+	"item.typestones.pencil.picture": "Bild aus %s × %s Steinen",
+	"item.typestones.pencil.blocked": "Der nächste Stein passt dort nicht hin: der Platz ist belegt",
+	"item.typestones.pencil.neighbour_gone": "Der Stein neben dem nächsten fehlt; bis dorthin zurücknehmen"
 }

@@ -48,13 +48,19 @@ public class PencilItem extends Item {
 			tooltip.accept(Component.translatable("item.typestones.pencil.empty").withStyle(ChatFormatting.GRAY));
 			return;
 		}
+		if (line.picture().isPresent()) {
+			tooltip.accept(Component.translatable("item.typestones.pencil.picture", line.picture().get().cols(), line.picture().get().rows())
+					.withStyle(ChatFormatting.GRAY));
+			tooltip.accept(Component.translatable("item.typestones.pencil.next", line.next() + 1, line.size()).withStyle(ChatFormatting.DARK_GRAY));
+			return;
+		}
 		StringBuilder text = new StringBuilder();
 		for (String hash : line.letters()) {
 			String shown = Letters.isKnown(hash) || hash.equals(Letters.NONE) ? Letters.text(hash) : "?";
 			text.append(shown.isEmpty() ? " " : shown);
 		}
 		tooltip.accept(Component.literal(text.toString()).withStyle(ChatFormatting.GRAY));
-		tooltip.accept(Component.translatable("item.typestones.pencil.next", line.next() + 1, line.letters().size())
+		tooltip.accept(Component.translatable("item.typestones.pencil.next", line.next() + 1, line.size())
 				.withStyle(ChatFormatting.DARK_GRAY));
 	}
 }

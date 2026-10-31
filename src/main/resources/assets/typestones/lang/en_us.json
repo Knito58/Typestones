@@ -51,7 +51,7 @@
 	"item.typestones.pencil.next": "Next stone: %s of %s",
 	"item.typestones.pencil.empty": "Its line is written",
 	"gui.typestones.pencil": "Pencil",
-	"gui.typestones.pencil_tooltip": "Get a pencil that places the last started line, stone by stone, from the inventory at the back. Costs a stick and a smooth stone.",
+	"gui.typestones.pencil_tooltip": "Get a pencil that places the last job stone by stone from the inventory at the back: a line, or a picture row by row. Costs a stick and a smooth stone.",
 	"gui.typestones.status.no_line": "Press Start once first",
 	"gui.typestones.status.needs_stick": "A pencil needs a stick",
 	"item.typestones.pencil.missing": "Next stone missing in the Typewriter's chest: %s",
@@ -85,5 +85,11 @@
 	"config.typestones.chunks": "%s chunks",
 	"config.typestones.view.tooltip": "Picture stones further away are not drawn. Less is faster.",
 	"config.typestones.server_note": "On a server, the server's own settings decide resolution and size.",
-	"gui.typestones.status.needs_rgb_dye": "Waiting for RGB dye"
+	"gui.typestones.status.needs_rgb_dye": "Waiting for RGB dye",
+	"gui.typestones.claimed": "Program in control · %s",
+	"item.typestones.pencil.too_far": "The next stone is out of reach",
+	"item.typestones.pencil.picture_written": "Picture laid",
+	"item.typestones.pencil.picture": "Picture of %s × %s stones",
+	"item.typestones.pencil.blocked": "Can't place the next stone there: the spot is taken",
+	"item.typestones.pencil.neighbour_gone": "The stone next to the next one is gone; undo back to it"
 }

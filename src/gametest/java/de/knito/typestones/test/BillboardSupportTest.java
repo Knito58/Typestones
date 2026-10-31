@@ -83,13 +83,18 @@ public class BillboardSupportTest {
 
 		Box first = new Box("one");
 		Box second = new Box("two");
+		try {
+			call(methods, "setText", first, "NO");
+			throw helper.assertionException(Component.literal("A program changed the Typewriter without claiming it"));
+		} catch (LuaException expected) {
+			helper.assertTrue(expected.getMessage().contains("claim() first"), "Message: " + expected.getMessage());
+		}
+		Object[] claimed = (Object[]) call(methods, "claim", first);
+		helper.assertTrue(claimed[0].equals(true), "claim failed");
 		call(methods, "setText", first, "HELLO");
 		helper.assertTrue("HELLO".equals(call(methods, "getText", first)), "getText");
 		Object[] noFile = (Object[]) call(methods, "drawImage", first, "cat.png", Map.of("width", 2L, "height", 2L));
 		helper.assertTrue(noFile[0].equals(false) && noFile[1].equals("not_found"), "drawImage of a file the box doesn't have");
-
-		Object[] claimed = (Object[]) call(methods, "claim", first);
-		helper.assertTrue(claimed[0].equals(true), "claim failed");
 		Object[] taken = (Object[]) call(methods, "claim", second);
 		helper.assertTrue(taken[0].equals(false) && taken[1].equals("Lua Box one"), "A second box took the claim");
 		try {

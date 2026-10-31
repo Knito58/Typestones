@@ -46,6 +46,42 @@ public class TypewriterPictureTest {
 		return out.toByteArray();
 	}
 
+	/** A program must claim the Typewriter before changing it; its screen then only watches. */
+	@GameTest
+	public void claimIsRequiredAndLocksTheScreen(GameTestHelper helper) {
+		BlockPos pos = new BlockPos(1, 1, 1);
+		helper.setBlock(pos, ModTypewriter.BLOCK.defaultBlockState().setValue(TypewriterBlock.FACING, Direction.NORTH));
+		if (!(helper.getBlockEntity(pos, TypewriterBlockEntity.class) instanceof TypewriterBlockEntity typewriter)) {
+			throw helper.assertionException(Component.literal("Typewriter missing"));
+		}
+		TypewriterScript script = new TypewriterScript(typewriter);
+		boolean[] active = {true};
+		TypewriterScript.Holder holder = new TypewriterScript.Holder() {
+			@Override
+			public boolean isActive() {
+				return active[0];
+			}
+
+			@Override
+			public String describe() {
+				return "test program";
+			}
+		};
+		try {
+			script.checkMayChange(holder);
+			throw helper.assertionException(Component.literal("A program may change the Typewriter without a claim"));
+		} catch (IllegalArgumentException expected) {
+			helper.assertTrue(expected.getMessage().contains("claim() first"), "Message: " + expected.getMessage());
+		}
+		helper.assertFalse(typewriter.isClaimed(), "Claimed before claim()");
+		script.claim(holder);
+		script.checkMayChange(holder);
+		helper.assertTrue(typewriter.isClaimed(), "claim() didn't take the Typewriter");
+		active[0] = false;
+		helper.assertFalse(typewriter.isClaimed(), "The claim outlived its program");
+		helper.succeed();
+	}
+
 	@GameTest
 	public void optionsAndImagesAreChecked(GameTestHelper helper) {
 		TypewriterScript.Options options = TypewriterScript.Options.of(Map.of("width", 3L, "height", 2L, "fit", "fill", "facing", "ceiling"));
