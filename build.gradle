@@ -36,6 +36,14 @@ fabricApi {
 }
 tasks.named('check') { dependsOn 'runGameTest' }
 
+repositories {
+	// Mod Menu, a soft dependency: compiled against, not shipped.
+	maven {
+		url = "https://maven.terraformersmc.com/releases"
+		content { includeGroup "com.terraformersmc" }
+	}
+}
+
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
@@ -43,6 +51,9 @@ dependencies {
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// Soft dependencies: Typestones works without them and only uses them when they are installed.
+	compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
 }
 
 // The glyph generator: a small Java program, not part of the mod. It draws the glyph textures of every

@@ -32,6 +32,7 @@ import de.knito.typestones.ModBlocks;
 import de.knito.typestones.ModComponents;
 import de.knito.typestones.ModPictures;
 import de.knito.typestones.Typestones;
+import de.knito.typestones.TypestonesConfig;
 import de.knito.typestones.block.TypestoneBlock;
 import de.knito.typestones.block.TypestoneBlockEntity;
 import de.knito.typestones.picture.Picture;
@@ -123,10 +124,23 @@ public class PictureTest {
 	}
 
 	@GameTest
-	public void rgbDyeRecipeLoads(GameTestHelper helper) {
+	public void rgbDyeRecipeOnlyWithScripting(GameTestHelper helper) {
+		// Without Billboard API or CC: Tweaked nothing can make pictures, so the dye has no recipe.
 		var key = ResourceKey.create(Registries.RECIPE, Typestones.id("rgb_dye"));
-		helper.assertTrue(helper.getLevel().recipeAccess().byKey(key).isPresent(), "The RGB dye recipe did not load");
+		helper.assertTrue(helper.getLevel().recipeAccess().byKey(key).isPresent() == ModPictures.scriptingAvailable(),
+				"The RGB dye recipe should load exactly when a scripting mod is there");
 		helper.assertTrue(ModPictures.RGB_DYE != null, "No RGB dye");
+		helper.succeed();
+	}
+
+	/** Settings out of range fall back or are clamped instead of breaking pictures. */
+	@GameTest
+	public void configKeepsItsLimits(GameTestHelper helper) {
+		TypestonesConfig config = new TypestonesConfig(48, 0, 99, 50);
+		helper.assertTrue(config.pictureResolution() == 32, "Unknown resolution kept: " + config.pictureResolution());
+		helper.assertTrue(config.maxCols() == 1 && config.maxRows() == Picture.MAX_STONES, "Size not clamped: " + config);
+		helper.assertTrue(config.viewChunks() == TypestonesConfig.MAX_VIEW_CHUNKS, "View distance not clamped: " + config);
+		helper.assertTrue(TypestonesConfig.DEFAULT.viewBlocks() == 64, "Default view distance is not 4 chunks");
 		helper.succeed();
 	}
 

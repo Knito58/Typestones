@@ -1,4 +1,13 @@
 {
+	"fabric:load_conditions": [
+		{
+			"condition": "fabric:any_mods_loaded",
+			"values": [
+				"billboard_api",
+				"computercraft"
+			]
+		}
+	],
 	"type": "minecraft:crafting_shapeless",
 	"category": "misc",
 	"ingredients": [
@@ -10,6 +19,6 @@
 	],
 	"result": {
 		"id": "typestones:rgb_dye",
-		"count": 5
+		"count": 8
 	}
 }

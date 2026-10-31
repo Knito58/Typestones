@@ -21,6 +21,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
+import de.knito.typestones.TypestonesConfig;
 import de.knito.typestones.block.TypestoneBlock;
 import de.knito.typestones.block.TypestoneBlockEntity;
 import de.knito.typestones.picture.PictureTile;
@@ -134,9 +135,9 @@ public class PictureStoneRenderer implements BlockEntityRenderer<TypestoneBlockE
 				.setNormal(pose, face.getStepX(), face.getStepY(), face.getStepZ());
 	}
 
-	/** Pictures are seen from afar; vanilla's 64 blocks would cut big walls off. */
+	/** The view distance of the settings, 4 chunks unless changed. */
 	@Override
 	public int getViewDistance() {
-		return 128;
+		return TypestonesConfig.get().viewBlocks();
 	}
 }

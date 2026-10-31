@@ -20,6 +20,7 @@ public class Typestones implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		TypestonesConfig.load();
 		ModComponents.initialize();
 		ModBlocks.initialize();
 		ModTypewriter.initialize();
