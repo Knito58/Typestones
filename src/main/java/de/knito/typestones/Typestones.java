@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.knito.typestones.script.billboard.BillboardSupport;
+import de.knito.typestones.script.cc.CcSupport;
 
 /**
  * Common entrypoint (runs on client and server): registers the components, the Typestone blocks, the Typewriter, the pencil, the letter library and the pictures.
@@ -33,6 +34,9 @@ public class Typestones implements ModInitializer {
 		// Soft dependencies: their classes are only touched when the mod is there.
 		if (FabricLoader.getInstance().isModLoaded("billboard_api")) {
 			BillboardSupport.register();
+		}
+		if (FabricLoader.getInstance().isModLoaded("computercraft")) {
+			CcSupport.register();
 		}
 	}
 }

@@ -152,23 +152,30 @@ public final class TypewriterScript {
 		}
 		MinecraftServer server = server();
 		int pixels = TypestonesConfig.get().pictureResolution();
-		return CompletableFuture.supplyAsync(() -> {
-			try {
-				return (Object) Picture.of(read(bytes.read()), parsed.cols, parsed.rows, pixels, parsed.mode);
-			} catch (ImageProblem problem) {
-				return problem.reason;
-			}
-		}, Util.backgroundExecutor()).thenApplyAsync(result -> {
-			if (!(result instanceof Picture picture)) {
-				return fail((String) result);
-			}
-			// The world went on while the image was read.
-			Object @Nullable [] late = refused(parsed);
-			if (late != null) {
-				return late;
-			}
-			return start(picture, name, parsed, maker, server);
-		}, server);
+		return CompletableFuture.supplyAsync(() -> prepare(bytes, parsed, pixels), Util.backgroundExecutor())
+				.thenApplyAsync(result -> result instanceof Picture picture ? startPrepared(picture, name, parsed, maker) : fail((String) result), server);
+	}
+
+	/**
+	 * The first half of drawImage, for any thread but the server's: reads the image and makes the
+	 * picture. Gives the {@link Picture}, or the reason as a String.
+	 */
+	public static Object prepare(ImageSource bytes, Options options, int pixels) {
+		if (tooBig(options)) {
+			return "too_big";
+		}
+		try {
+			return Picture.of(read(bytes.read()), options.cols, options.rows, pixels, options.mode);
+		} catch (ImageProblem problem) {
+			return problem.reason;
+		}
+	}
+
+	/** The second half of drawImage, on the server thread: checks again, saves the picture and starts. */
+	public Object[] startPrepared(Picture picture, String name, Options options, String maker) {
+		// The world went on while the image was read.
+		Object @Nullable [] refused = refused(options);
+		return refused != null ? refused : start(picture, name, options, maker, server());
 	}
 
 	private Object[] start(Picture picture, String name, Options options, String maker, MinecraftServer server) {

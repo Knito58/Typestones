@@ -42,6 +42,11 @@ repositories {
 		url = "https://maven.terraformersmc.com/releases"
 		content { includeGroup "com.terraformersmc" }
 	}
+	// CC: Tweaked, a soft dependency: compiled against, not shipped.
+	maven {
+		url = "https://maven.squiddev.cc"
+		content { includeGroup "cc.tweaked" }
+	}
 }
 
 dependencies {
@@ -54,6 +59,8 @@ dependencies {
 
 	// Soft dependencies: Typestones works without them and only uses them when they are installed.
 	compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+	compileOnly("cc.tweaked:cc-tweaked-${project.minecraft_version}-core-api:${project.cc_tweaked_version}") { transitive = false }
+	compileOnly("cc.tweaked:cc-tweaked-${project.minecraft_version}-fabric-api:${project.cc_tweaked_version}") { transitive = false }
 }
 
 // The glyph generator: a small Java program, not part of the mod. It draws the glyph textures of every
