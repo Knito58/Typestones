@@ -5,6 +5,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.model.loading.v1.CustomUnbakedBlockStateModel;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
 import de.knito.typestones.ModBlocks;
 import de.knito.typestones.ModTypewriter;
@@ -18,6 +19,8 @@ import de.knito.typestones.client.model.TypestoneItemModel;
 import de.knito.typestones.client.network.LetterSync;
 import de.knito.typestones.client.picture.PictureStoneRenderer;
 import de.knito.typestones.client.picture.PictureSync;
+import de.knito.typestones.typewriter.TypewriterActionPayload;
+import de.knito.typestones.typewriter.TypewriterMenu;
 
 /**
  * Client entrypoint: registers the models that draw the letters and the renderer of pictures, fetches
@@ -36,5 +39,10 @@ public class TypestonesClient implements ClientModInitializer {
 				context -> new PictureStoneRenderer());
 
 		MenuScreens.register(ModTypewriter.MENU, TypewriterScreen::new);
+		ClientPlayNetworking.registerGlobalReceiver(TypewriterActionPayload.PencilPictures.TYPE, (payload, context) -> {
+			if (context.player().containerMenu instanceof TypewriterMenu menu) {
+				menu.setPencilPictures(payload.hashes());
+			}
+		});
 	}
 }

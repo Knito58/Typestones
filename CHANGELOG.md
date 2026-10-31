@@ -65,4 +65,6 @@ First version for Minecraft 26.3 (Fabric). Needed on client and server.
   after that, any click lays the next stone in its place, standing or lying like the picture.
 - Picture stones and picture pencils name the image they were made from in their tooltip ("From
   fruits.jpg"), so stones of several pictures in one chest can't get mixed up.
+- The Typewriter screen has a chooser beside Start for what the Pencil button makes a pencil for:
+  the last job, or any picture whose stones are in the output (up to 8, shown by image name).
 - Characters: the set of Billboard Engine (A–Z, a–z, 0–9, punctuation, Ä Ö Ü ä ö ü ß, ° · €).

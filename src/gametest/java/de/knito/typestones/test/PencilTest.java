@@ -186,6 +186,37 @@ public class PencilTest {
 		helper.succeed();
 	}
 
+	@GameTest
+	public void pencilForAPictureInTheOutput(GameTestHelper helper) {
+		BlockPos pos = new BlockPos(1, 1, 1);
+		helper.setBlock(pos, ModTypewriter.BLOCK.defaultBlockState().setValue(TypewriterBlock.FACING, Direction.NORTH));
+		helper.setBlock(pos.west(), Blocks.CHEST);
+		helper.setBlock(pos.south(), Blocks.CHEST);
+		if (!(helper.getBlockEntity(pos, TypewriterBlockEntity.class) instanceof TypewriterBlockEntity typewriter)
+				|| !(helper.getBlockEntity(pos.west(), ChestBlockEntity.class) instanceof ChestBlockEntity input)
+				|| !(helper.getBlockEntity(pos.south(), ChestBlockEntity.class) instanceof ChestBlockEntity output)) {
+			throw helper.assertionException(Component.literal("Typewriter or chests missing"));
+		}
+		TypewriterBlockEntity.PictureJob fruits = new TypewriterBlockEntity.PictureJob("f00d", 3, 2, PictureTile.Plane.WALL);
+		TypewriterBlockEntity.PictureJob sun = new TypewriterBlockEntity.PictureJob("5a1", 2, 1, PictureTile.Plane.FLAT);
+		output.setItem(0, ModBlocks.TYPESTONE_ITEM.stack(Letters.classic('A'), Dyes.DEFAULT, 1));
+		output.setItem(1, ModBlocks.TYPESTONE_ITEM.pictureStack(fruits.tile(4)));
+		output.setItem(2, ModBlocks.TYPESTONE_ITEM.pictureStack(sun.tile(0)));
+		output.setItem(3, ModBlocks.TYPESTONE_ITEM.pictureStack(fruits.tile(0)));
+		List<String> found = typewriter.outputPictures().stream().map(PictureTile::hash).toList();
+		helper.assertTrue(found.equals(List.of("f00d", "5a1")), "Pictures in the output: " + found);
+
+		input.setItem(0, new ItemStack(Items.STICK, 2));
+		input.setItem(1, new ItemStack(Items.SMOOTH_STONE, 2));
+		ItemStack pencil = typewriter.makePencil("f00d");
+		PencilLine line = pencil.get(ModComponents.PENCIL_LINE);
+		helper.assertTrue(line != null && line.picture().equals(Optional.of(fruits)), "Wrong picture pencil: " + line);
+		helper.assertTrue(typewriter.makePencil("beef").isEmpty() && typewriter.status() == TypewriterStatus.PICTURE_GONE,
+				"A pencil for a picture that isn't in the output: " + typewriter.status());
+		helper.assertTrue(input.getItem(0).getCount() == 1, "A refused pencil cost a stick");
+		helper.succeed();
+	}
+
 	private static @Nullable PictureTile tile(GameTestHelper helper, BlockPos absolute) {
 		return helper.getLevel().getBlockEntity(absolute) instanceof TypestoneBlockEntity stone ? stone.picture() : null;
 	}
