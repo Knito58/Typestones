@@ -94,6 +94,8 @@
 	"gui.typestones.claimed": "Programm steuert · %s",
 	"item.typestones.pencil.too_far": "Der nächste Stein ist außer Reichweite",
 	"item.typestones.pencil.picture_written": "Bild gelegt",
+	"item.typestones.pencil.from_bottom": "Beginnt unten links und baut nach oben. In die Luft benutzen, um oben links zu beginnen.",
+	"item.typestones.pencil.from_top": "Beginnt oben links und geht nach unten. In die Luft benutzen, um unten links zu beginnen.",
 	"item.typestones.pencil.picture": "Bild aus %s × %s Steinen",
 	"item.typestones.pencil.blocked": "Der nächste Stein passt dort nicht hin: der Platz ist belegt",
 	"item.typestones.pencil.neighbour_gone": "Der Stein neben dem nächsten fehlt; bis dorthin zurücknehmen"

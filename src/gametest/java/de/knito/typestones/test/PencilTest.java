@@ -147,6 +147,10 @@ public class PencilTest {
 		player.snapTo(Vec3.atCenterOf(start.north(2)), 0, 0);
 		player.setItemInHand(InteractionHand.MAIN_HAND,
 				ModPencil.picturePencil(GlobalPos.of(helper.getLevel().dimension(), helper.absolutePos(pos)), picture));
+		helper.assertTrue(player.getMainHandItem().get(ModComponents.PENCIL_LINE).fromBottom(), "A picture pencil should start at the bottom");
+		// Used in the air: start at the top left instead.
+		player.getMainHandItem().use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
+		helper.assertFalse(player.getMainHandItem().get(ModComponents.PENCIL_LINE).fromBottom(), "Using it in the air didn't switch the corner");
 
 		click(helper, player, helper.absolutePos(wall), Direction.NORTH);
 		helper.assertTrue(tile(helper, start) != null && tile(helper, start).col() == 0 && tile(helper, start).row() == 0,
@@ -183,6 +187,33 @@ public class PencilTest {
 		PencilLine line = PencilLine.of(GlobalPos.of(helper.getLevel().dimension(), BlockPos.ZERO), picture).withPlaced(BlockPos.ZERO);
 		PencilLine.STREAM_CODEC.encode(buf, line);
 		helper.assertTrue(line.equals(PencilLine.STREAM_CODEC.decode(buf)), "The picture pencil changed on the way");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void picturePencilBuildsUpFromTheBottom(GameTestHelper helper) {
+		BlockPos pos = new BlockPos(1, 1, 1);
+		helper.setBlock(pos, ModTypewriter.BLOCK.defaultBlockState().setValue(TypewriterBlock.FACING, Direction.NORTH));
+		helper.setBlock(pos.south(), Blocks.CHEST);
+		BlockPos ground = new BlockPos(4, 1, 4);
+		helper.setBlock(ground, Blocks.STONE);
+		if (!(helper.getBlockEntity(pos.south(), ChestBlockEntity.class) instanceof ChestBlockEntity chest)) {
+			throw helper.assertionException(Component.literal("Output chest missing"));
+		}
+		TypewriterBlockEntity.PictureJob picture = new TypewriterBlockEntity.PictureJob("b0770m", 1, 2, PictureTile.Plane.WALL);
+		chest.setItem(0, ModBlocks.TYPESTONE_ITEM.pictureStack(picture.tile(0)));
+		chest.setItem(1, ModBlocks.TYPESTONE_ITEM.pictureStack(picture.tile(1)));
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		BlockPos bottom = helper.absolutePos(ground.above());
+		player.snapTo(Vec3.atCenterOf(bottom.north(2)), 0, 0);
+		player.setItemInHand(InteractionHand.MAIN_HAND,
+				ModPencil.picturePencil(GlobalPos.of(helper.getLevel().dimension(), helper.absolutePos(pos)), picture));
+
+		click(helper, player, helper.absolutePos(ground), Direction.UP);
+		helper.assertTrue(tile(helper, bottom) != null && tile(helper, bottom).row() == 1, "The first stone isn't the bottom tile");
+		click(helper, player, helper.absolutePos(ground), Direction.UP);
+		helper.assertTrue(tile(helper, bottom.above()) != null && tile(helper, bottom.above()).row() == 0, "The top tile isn't above the bottom one");
+		helper.assertTrue(chest.isEmpty() && player.getMainHandItem().get(ModComponents.PENCIL_LINE) == null, "The pencil isn't done");
 		helper.succeed();
 	}
 

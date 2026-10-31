@@ -94,6 +94,8 @@
 	"gui.typestones.claimed": "Program in control · %s",
 	"item.typestones.pencil.too_far": "The next stone is out of reach",
 	"item.typestones.pencil.picture_written": "Picture laid",
+	"item.typestones.pencil.from_bottom": "Starts at the bottom left and builds up. Use in the air to start at the top left.",
+	"item.typestones.pencil.from_top": "Starts at the top left and goes down. Use in the air to start at the bottom left.",
 	"item.typestones.pencil.picture": "Picture of %s × %s stones",
 	"item.typestones.pencil.blocked": "Can't place the next stone there: the spot is taken",
 	"item.typestones.pencil.neighbour_gone": "The stone next to the next one is gone; undo back to it"

@@ -97,7 +97,7 @@ public final class PencilWriter {
 	/**
 	 * After the first stone, a picture goes on by itself wherever the player clicks: to the right of the
 	 * stone before, or for a new row below the first stone of the row above (towards the player for a
-	 * picture lying flat). Placed against a stone of the same picture, each stone lies as that one does.
+	 * picture lying flat), or above it when the pencil builds from the bottom. Placed against a stone of the same picture, each stone lies as that one does.
 	 */
 	private static @Nullable BlockPlaceContext pictureContext(ServerLevel level, Player player, UseOnContext context, ItemStack stone,
 			TypewriterBlockEntity.PictureJob picture, PencilLine line) {
@@ -111,7 +111,9 @@ public final class PencilWriter {
 			return null;
 		}
 		Direction facing = state.getValue(TypestoneBlock.FACING);
-		Direction side = !newRow ? facing.getClockWise() : state.getValue(TypestoneBlock.FLAT) ? facing.getOpposite() : Direction.DOWN;
+		// A new row goes down the picture, or up it when the pencil builds from the bottom.
+		Direction pictureDown = state.getValue(TypestoneBlock.FLAT) ? facing.getOpposite() : Direction.DOWN;
+		Direction side = !newRow ? facing.getClockWise() : line.fromBottom() ? pictureDown.getOpposite() : pictureDown;
 		BlockPlaceContext place = against(player, context, stone, neighbour, side);
 		if (!place.canPlace() || !place.getClickedPos().equals(neighbour.relative(side))) {
 			player.sendOverlayMessage(Component.translatable("item.typestones.pencil.blocked"));
@@ -160,9 +162,9 @@ public final class PencilWriter {
 
 	/** The stone at index of the pencil's line or picture, as an item of the Typewriter's output. */
 	private static ItemStack stone(ItemStack pencil, PencilLine line, int index) {
-		return line.picture()
-				.map(picture -> ModBlocks.TYPESTONE_ITEM.pictureStack(picture.tile(index)))
-				.orElseGet(() -> ModBlocks.TYPESTONE_ITEM.stack(line.letters().get(index), dyes(pencil), 1));
+		return line.picture().isPresent()
+				? ModBlocks.TYPESTONE_ITEM.pictureStack(line.tile(index))
+				: ModBlocks.TYPESTONE_ITEM.stack(line.letters().get(index), dyes(pencil), 1);
 	}
 
 	/** True when the placed stone is still the one the item makes. */
