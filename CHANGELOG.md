@@ -56,4 +56,11 @@ First version for Minecraft 26.3 (Fabric). Needed on client and server.
   first. Image files: PNG, JPEG or GIF (first frame), at most 4 MB and 4096 x 4096 pixels.
   `getStatus()` gives a code for programs (`needs_rgb_dye`), `getStatusText()` the sentence for
   people ("Waiting for RGB dye").
+- A program must `claim()` the Typewriter before it changes anything (text, start, stop, repeat,
+  pictures); reading works without. While a program holds it, the Typewriter's screen shows
+  "Program in control" with the job's status and only watches: buttons, text and dye slots are
+  locked until the program calls `release()` or ends.
+- The pencil also lays pictures: after a picture job the Pencil button makes a pencil that takes its
+  stones from the output row by row from the top left. The first click places the top left stone;
+  after that, any click lays the next stone in its place, standing or lying like the picture.
 - Characters: the set of Billboard Engine (A–Z, a–z, 0–9, punctuation, Ä Ö Ü ä ö ü ß, ° · €).

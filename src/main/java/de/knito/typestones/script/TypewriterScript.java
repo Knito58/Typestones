@@ -321,10 +321,17 @@ public final class TypewriterScript {
 		return current == null ? new Object[] {false} : new Object[] {true, current.describe()};
 	}
 
-	/** Throws for a program that may not change the Typewriter now, as the Billboard Engine does. */
+	/**
+	 * Throws unless this program holds the Typewriter. A program must {@link #claim} it before it changes
+	 * anything, so two programs can never fight over one machine and the screen shows who is in control.
+	 * Reading needs no claim.
+	 */
 	public void checkMayChange(Holder caller) {
 		Holder current = holder();
-		if (current != null && !current.equals(caller)) {
+		if (current == null) {
+			throw new IllegalArgumentException("typewriter not claimed, call claim() first");
+		}
+		if (!current.equals(caller)) {
 			throw new IllegalArgumentException("typewriter is claimed by " + current.describe());
 		}
 	}

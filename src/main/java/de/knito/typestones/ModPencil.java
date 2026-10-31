@@ -25,6 +25,7 @@ import de.knito.typestones.pencil.PencilLine;
 import de.knito.typestones.pencil.PencilToss;
 import de.knito.typestones.pencil.PottedPencilBlock;
 import de.knito.typestones.pencil.PottedPencilBlockEntity;
+import de.knito.typestones.typewriter.TypewriterBlockEntity;
 
 /** The pencil, which places a Typewriter's line stone by stone, and the flower pot it retires to. */
 public class ModPencil {
@@ -59,6 +60,13 @@ public class ModPencil {
 		if (!dyes.equals(Dyes.DEFAULT)) {
 			stack.set(ModComponents.DYES, dyes);
 		}
+		return stack;
+	}
+
+	/** A new pencil for the picture of the Typewriter at typewriter: it lays the stones row by row. */
+	public static ItemStack picturePencil(GlobalPos typewriter, TypewriterBlockEntity.PictureJob picture) {
+		ItemStack stack = new ItemStack(ITEM);
+		stack.set(ModComponents.PENCIL_LINE, PencilLine.of(typewriter, picture));
 		return stack;
 	}
 

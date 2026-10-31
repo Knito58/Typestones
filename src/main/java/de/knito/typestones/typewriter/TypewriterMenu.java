@@ -45,7 +45,7 @@ public class TypewriterMenu extends AbstractContainerMenu {
 
 	/** Client side. */
 	public TypewriterMenu(int containerId, Inventory inventory, OpenData openData) {
-		this(containerId, inventory, new SimpleContainer(2), new SimpleContainerData(4), null, openData.text(), openData.font());
+		this(containerId, inventory, new SimpleContainer(2), new SimpleContainerData(5), null, openData.text(), openData.font());
 	}
 
 	/** Server side. */
@@ -57,7 +57,7 @@ public class TypewriterMenu extends AbstractContainerMenu {
 			@Nullable TypewriterBlockEntity typewriter, String initialText, FontSettings initialFont) {
 		super(ModTypewriter.MENU, containerId);
 		checkContainerSize(dyeSamples, 2);
-		checkContainerDataCount(data, 4);
+		checkContainerDataCount(data, 5);
 		this.dyeSamples = dyeSamples;
 		this.data = data;
 		this.typewriter = typewriter;
@@ -114,6 +114,11 @@ public class TypewriterMenu extends AbstractContainerMenu {
 		return data.get(3);
 	}
 
+	/** True while a program (Lua Box, computer) holds the Typewriter: the screen can only watch then. */
+	public boolean claimed() {
+		return data.get(4) != 0;
+	}
+
 	@Override
 	public boolean stillValid(Player player) {
 		return dyeSamples.stillValid(player);
@@ -124,6 +129,9 @@ public class TypewriterMenu extends AbstractContainerMenu {
 	 * The dye of the other slot is refused, since the letter would be invisible; a space makes that block.
 	 */
 	private void setSample(int slot, ItemStack stack) {
+		if (claimed()) {
+			return;
+		}
 		ItemStack sample = TypewriterBlockEntity.dyeOf(stack).map(c -> new ItemStack(TypewriterBlockEntity.dyeItem(c))).orElse(ItemStack.EMPTY);
 		int other = slot == TypewriterBlockEntity.SLOT_LETTER ? TypewriterBlockEntity.SLOT_BACKGROUND : TypewriterBlockEntity.SLOT_LETTER;
 		if (!sample.isEmpty() && ItemStack.isSameItem(sample, dyeSamples.getItem(other))) {

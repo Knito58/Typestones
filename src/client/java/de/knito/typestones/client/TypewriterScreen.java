@@ -442,6 +442,19 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		graphics.fill(x + w - 1, y, x + w, y + h, color);
 	}
 
+	/** While a program holds the Typewriter, every control is greyed out: the screen only watches. */
+	@Override
+	protected void containerTick() {
+		super.containerTick();
+		boolean free = !menu.claimed();
+		for (var child : children()) {
+			if (child instanceof net.minecraft.client.gui.components.AbstractWidget widget) {
+				// Size, scale and baseline stay off for the classic face, see updateFontButtons.
+				widget.active = free && !(settings.isClassic() && fontButtons.contains(widget));
+			}
+		}
+	}
+
 	@Override
 	protected void extractLabels(GuiGraphicsExtractor graphics, int xm, int ym) {
 		super.extractLabels(graphics, xm, ym);
@@ -451,7 +464,10 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 			graphics.text(font, progress, imageWidth - 8 - font.width(progress), 93, 0xFF404040, false);
 		}
 		TypewriterStatus status = menu.status();
-		graphics.text(font, status.describe(), 8, STATUS_Y, status.color, false);
+		Component line = menu.claimed()
+				? Component.translatable("gui.typestones.claimed", status.describe())
+				: status.describe();
+		graphics.text(font, line, 8, STATUS_Y, menu.claimed() ? 0xFF2040A0 : status.color, false);
 	}
 
 	@Override

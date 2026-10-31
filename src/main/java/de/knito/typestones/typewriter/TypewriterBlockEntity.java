@@ -7,6 +7,8 @@ import java.util.Optional;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
+import io.netty.buffer.ByteBuf;
+
 import org.jspecify.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
@@ -14,6 +16,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
@@ -84,18 +88,31 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 
 	/** A picture being typed: one stone per tile, row by row from the top left. */
 	public record PictureJob(String hash, int cols, int rows, PictureTile.Plane plane) {
-		static final Codec<PictureJob> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+		public static final Codec<PictureJob> CODEC = RecordCodecBuilder.create(instance -> instance.group(
 				Codec.STRING.fieldOf("hash").forGetter(PictureJob::hash),
 				Codec.intRange(1, Picture.MAX_STONES).fieldOf("cols").forGetter(PictureJob::cols),
 				Codec.intRange(1, Picture.MAX_STONES).fieldOf("rows").forGetter(PictureJob::rows),
 				PictureTile.Plane.CODEC.optionalFieldOf("plane", PictureTile.Plane.WALL).forGetter(PictureJob::plane)
 		).apply(instance, PictureJob::new));
 
+		public static final StreamCodec<ByteBuf, PictureJob> STREAM_CODEC = StreamCodec.composite(
+				ByteBufCodecs.stringUtf8(64), PictureJob::hash,
+				ByteBufCodecs.VAR_INT, PictureJob::cols,
+				ByteBufCodecs.VAR_INT, PictureJob::rows,
+				ByteBufCodecs.idMapper(i -> PictureTile.Plane.values()[Math.clamp(i, 0, PictureTile.Plane.values().length - 1)],
+						PictureTile.Plane::ordinal), PictureJob::plane,
+				PictureJob::new);
+
+		public PictureJob {
+			cols = Math.clamp(cols, 1, Picture.MAX_STONES);
+			rows = Math.clamp(rows, 1, Picture.MAX_STONES);
+		}
+
 		public int stones() {
 			return cols * rows;
 		}
 
-		PictureTile tile(int index) {
+		public PictureTile tile(int index) {
 			return new PictureTile(hash, cols, rows, index % cols, index / cols, plane);
 		}
 	}
@@ -132,7 +149,7 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 	/** The program that claimed the Typewriter; not saved, a claim ends with the program. */
 	private TypewriterScript.@Nullable Holder holder;
 
-	/** Synced to the open screen: 0 = status, 1 = blocks made, 2 = blocks in the job, 3 = repeat. */
+	/** Synced to the open screen: 0 = status, 1 = blocks made, 2 = blocks in the job, 3 = repeat, 4 = 1 while a program holds it. */
 	private final ContainerData data = new ContainerData() {
 		@Override
 		public int get(int index) {
@@ -141,6 +158,7 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 				case 1 -> made;
 				case 2 -> total();
 				case 3 -> repeat;
+				case 4 -> isClaimed() ? 1 : 0;
 				default -> 0;
 			};
 		}
@@ -151,7 +169,7 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 
 		@Override
 		public int getCount() {
-			return 4;
+			return 5;
 		}
 	};
 
@@ -238,6 +256,14 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 
 	public void setHolder(TypewriterScript.@Nullable Holder holder) {
 		this.holder = holder;
+	}
+
+	/** True while a program holds the Typewriter; its screen then can't change it. A claim ends with its program. */
+	public boolean isClaimed() {
+		if (holder != null && !holder.isActive()) {
+			holder = null;
+		}
+		return holder != null;
 	}
 
 	public boolean isRunning() {
@@ -450,11 +476,11 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 	}
 
 	/**
-	 * Makes a pencil for the line of the last Start, in the current dyes, from a stick and a smooth stone
-	 * of the inputs. Empty when that fails; the status then says why.
+	 * Makes a pencil for the last job, from a stick and a smooth stone of the inputs: for a line in the
+	 * current dyes, or for a picture, whose stones it lays row by row. Empty when that fails; the status then says why.
 	 */
 	public ItemStack makePencil() {
-		if (level == null || jobLetters.isEmpty()) {
+		if (level == null || jobLetters.isEmpty() && pictureJob == null) {
 			status = TypewriterStatus.NO_LINE;
 			return ItemStack.EMPTY;
 		}
@@ -470,6 +496,9 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 				return ItemStack.EMPTY;
 			}
 			transaction.commit();
+		}
+		if (pictureJob != null) {
+			return ModPencil.picturePencil(GlobalPos.of(level.dimension(), worldPosition), pictureJob);
 		}
 		Dyes dyes = new Dyes(dyeOf(dyeSamples.getItem(SLOT_LETTER)).orElse(DyeColor.BLACK), dyeOf(dyeSamples.getItem(SLOT_BACKGROUND)));
 		return ModPencil.pencil(GlobalPos.of(level.dimension(), worldPosition), jobLetters, dyes);

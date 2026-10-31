@@ -6,6 +6,8 @@ import java.util.Optional;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
+import org.jspecify.annotations.Nullable;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
@@ -36,6 +38,7 @@ import de.knito.typestones.block.TypestoneBlockEntity;
 import de.knito.typestones.letter.LetterLibrary;
 import de.knito.typestones.letter.Letters;
 import de.knito.typestones.pencil.PencilLine;
+import de.knito.typestones.picture.PictureTile;
 import de.knito.typestones.pencil.PencilToss;
 import de.knito.typestones.pencil.PottedPencilBlock;
 import de.knito.typestones.typewriter.FontSettings;
@@ -123,6 +126,68 @@ public class PencilTest {
 		helper.assertTrue(helper.getLevel().getBlockEntity(second.relative(right)) instanceof TypestoneBlockEntity stone
 				&& stone.letter().equals(letters.get(2)), "The B is missing");
 		helper.succeed();
+	}
+
+	@GameTest
+	public void picturePencilLaysRowByRow(GameTestHelper helper) {
+		BlockPos pos = new BlockPos(1, 1, 1);
+		helper.setBlock(pos, ModTypewriter.BLOCK.defaultBlockState().setValue(TypewriterBlock.FACING, Direction.NORTH));
+		helper.setBlock(pos.south(), Blocks.CHEST);
+		BlockPos wall = new BlockPos(4, 4, 4);
+		helper.setBlock(wall, Blocks.STONE);
+		if (!(helper.getBlockEntity(pos.south(), ChestBlockEntity.class) instanceof ChestBlockEntity chest)) {
+			throw helper.assertionException(Component.literal("Output chest missing"));
+		}
+		TypewriterBlockEntity.PictureJob picture = new TypewriterBlockEntity.PictureJob("cafe", 2, 2, PictureTile.Plane.WALL);
+		for (int i = 0; i < picture.stones(); i++) {
+			chest.setItem(i, ModBlocks.TYPESTONE_ITEM.pictureStack(picture.tile(i)));
+		}
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		BlockPos start = helper.absolutePos(wall.north());
+		player.snapTo(Vec3.atCenterOf(start.north(2)), 0, 0);
+		player.setItemInHand(InteractionHand.MAIN_HAND,
+				ModPencil.picturePencil(GlobalPos.of(helper.getLevel().dimension(), helper.absolutePos(pos)), picture));
+
+		click(helper, player, helper.absolutePos(wall), Direction.NORTH);
+		helper.assertTrue(tile(helper, start) != null && tile(helper, start).col() == 0 && tile(helper, start).row() == 0,
+				"The first stone isn't the top left tile");
+		Direction right = helper.getLevel().getBlockState(start).getValue(TypestoneBlock.FACING).getClockWise();
+		// Wherever the player clicks, the picture goes on in its own order.
+		click(helper, player, helper.absolutePos(wall), Direction.UP);
+		BlockPos topRight = start.relative(right);
+		helper.assertTrue(tile(helper, topRight) != null && tile(helper, topRight).col() == 1 && tile(helper, topRight).row() == 0,
+				"The second stone isn't right of the first");
+		click(helper, player, helper.absolutePos(wall), Direction.UP);
+		helper.assertTrue(tile(helper, start.below()) != null && tile(helper, start.below()).row() == 1
+				&& tile(helper, start.below()).col() == 0, "The second row didn't start below the first");
+
+		player.setShiftKeyDown(true);
+		click(helper, player, start, Direction.NORTH);
+		player.setShiftKeyDown(false);
+		helper.assertTrue(helper.getLevel().getBlockState(start.below()).isAir() && chest.countItem(ModBlocks.TYPESTONE_ITEM) == 2,
+				"Undo didn't take the picture stone back");
+
+		click(helper, player, start, Direction.NORTH);
+		click(helper, player, start, Direction.NORTH);
+		helper.assertTrue(tile(helper, start.below().relative(right)) != null && tile(helper, start.below().relative(right)).col() == 1,
+				"The last tile is missing");
+		helper.assertTrue(player.getMainHandItem().get(ModComponents.PENCIL_LINE) == null && chest.isEmpty(),
+				"The picture pencil isn't done");
+		for (BlockPos stone : List.of(start, topRight, start.below())) {
+			helper.assertTrue(helper.getLevel().getBlockState(stone).getValue(TypestoneBlock.FACING)
+					== helper.getLevel().getBlockState(start).getValue(TypestoneBlock.FACING)
+					&& !helper.getLevel().getBlockState(stone).getValue(TypestoneBlock.FLAT), "A picture stone lies the wrong way");
+		}
+
+		ByteBuf buf = Unpooled.buffer();
+		PencilLine line = PencilLine.of(GlobalPos.of(helper.getLevel().dimension(), BlockPos.ZERO), picture).withPlaced(BlockPos.ZERO);
+		PencilLine.STREAM_CODEC.encode(buf, line);
+		helper.assertTrue(line.equals(PencilLine.STREAM_CODEC.decode(buf)), "The picture pencil changed on the way");
+		helper.succeed();
+	}
+
+	private static @Nullable PictureTile tile(GameTestHelper helper, BlockPos absolute) {
+		return helper.getLevel().getBlockEntity(absolute) instanceof TypestoneBlockEntity stone ? stone.picture() : null;
 	}
 
 	@GameTest

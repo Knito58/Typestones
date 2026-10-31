@@ -61,6 +61,10 @@ public class ModTypewriter {
 				return;
 			}
 			TypewriterBlockEntity typewriter = menu.typewriter();
+			// A program holds it: the screen only watches.
+			if (typewriter.isClaimed()) {
+				return;
+			}
 			typewriter.applySettings(payload.text(), payload.repeat(), payload.font());
 			switch (payload.action()) {
 				case SAVE -> {
