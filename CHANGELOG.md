@@ -63,4 +63,6 @@ First version for Minecraft 26.3 (Fabric). Needed on client and server.
 - The pencil also lays pictures: after a picture job the Pencil button makes a pencil that takes its
   stones from the output row by row from the top left. The first click places the top left stone;
   after that, any click lays the next stone in its place, standing or lying like the picture.
+- Picture stones and picture pencils name the image they were made from in their tooltip ("From
+  fruits.jpg"), so stones of several pictures in one chest can't get mixed up.
 - Characters: the set of Billboard Engine (A–Z, a–z, 0–9, punctuation, Ä Ö Ü ä ö ü ß, ° · €).

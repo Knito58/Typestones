@@ -62,6 +62,7 @@
 	"block.typestones.potted_pencil": "Eingetopfter Bleistift",
 	"advancements.typestones.potted_pencil.title": "Eingetopfter Bleistift",
 	"advancements.typestones.potted_pencil.description": "Setze einen Bleistift, dessen Zeile geschrieben ist, in einen Blumentopf zur Ruhe",
+	"item.typestones.typestone.picture_name": "Aus %s",
 	"item.typestones.typestone.with_picture": "%s (Bild %s, %s von %s × %s)",
 	"item.typestones.rgb_dye": "RGB-Farbstoff",
 	"message.typestones.picture_library_full": "Die Bildbibliothek dieser Welt ist voll (%s Bilder). Bitte einen Operator, unbenutzte Bilder zu entfernen.",

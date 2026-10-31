@@ -22,6 +22,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
 import de.knito.typestones.Typestones;
+import de.knito.typestones.block.TypestoneItem;
 import de.knito.typestones.network.PicturePayloads;
 import de.knito.typestones.picture.Picture;
 
@@ -35,6 +36,8 @@ public final class PictureSync {
 	private static final Set<String> REQUESTED = new HashSet<>();
 	private static final List<String> TO_REQUEST = new ArrayList<>();
 	private static final Map<String, Identifier> TEXTURES = new HashMap<>();
+	/** The names the pictures were made from, for tooltips. */
+	private static final Map<String, String> NAMES = new HashMap<>();
 	/** Parts of pictures still on their way. */
 	private static final Map<String, byte[][]> PARTS = new HashMap<>();
 
@@ -44,6 +47,7 @@ public final class PictureSync {
 	public static void initialize() {
 		ClientTickEvents.END_CLIENT_TICK.register(client -> sendRequests());
 		ClientPlayNetworking.registerGlobalReceiver(PicturePayloads.Part.TYPE, (payload, context) -> received(payload));
+		TypestoneItem.pictureNames = PictureSync::name;
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(PictureSync::forget));
 	}
 
@@ -55,6 +59,12 @@ public final class PictureSync {
 			TO_REQUEST.add(hash);
 		}
 		return texture;
+	}
+
+	/** The name the picture was made from, or null while it is not here yet; then it is asked for. */
+	public static @Nullable String name(String hash) {
+		texture(hash);
+		return NAMES.get(hash);
 	}
 
 	private static void sendRequests() {
@@ -81,6 +91,9 @@ public final class PictureSync {
 			return;
 		}
 		parts[part.index()] = part.png();
+		if (!part.name().isEmpty()) {
+			NAMES.put(hash, part.name());
+		}
 		ByteArrayOutputStream png = new ByteArrayOutputStream();
 		for (byte[] bytes : parts) {
 			if (bytes == null) {
@@ -119,6 +132,7 @@ public final class PictureSync {
 			Minecraft.getInstance().getTextureManager().release(id);
 		}
 		TEXTURES.clear();
+		NAMES.clear();
 		REQUESTED.clear();
 		TO_REQUEST.clear();
 		PARTS.clear();

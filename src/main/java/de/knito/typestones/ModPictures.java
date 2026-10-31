@@ -111,10 +111,12 @@ public class ModPictures {
 			if (png == null) {
 				continue;
 			}
+			PictureInfo info = library.find(hash);
+			String name = info == null ? "" : info.name();
 			int count = Math.max(1, (png.length + PicturePayloads.PART_SIZE - 1) / PicturePayloads.PART_SIZE);
 			for (int i = 0; i < count; i++) {
 				byte[] part = Arrays.copyOfRange(png, i * PicturePayloads.PART_SIZE, Math.min(png.length, (i + 1) * PicturePayloads.PART_SIZE));
-				ServerPlayNetworking.send(player, new PicturePayloads.Part(hash, i, count, part));
+				ServerPlayNetworking.send(player, new PicturePayloads.Part(hash, name, i, count, part));
 			}
 		}
 	}

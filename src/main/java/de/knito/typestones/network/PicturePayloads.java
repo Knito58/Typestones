@@ -9,6 +9,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 import de.knito.typestones.Typestones;
+import de.knito.typestones.picture.PictureInfo;
 
 /** The packets that bring pictures from the server's library to the players. */
 public final class PicturePayloads {
@@ -34,11 +35,15 @@ public final class PicturePayloads {
 		}
 	}
 
-	/** Server to client: part index of count of a picture's PNG. Unknown pictures get no answer. */
-	public record Part(String hash, int index, int count, byte[] png) implements CustomPacketPayload {
+	/**
+	 * Server to client: part index of count of a picture's PNG, with the name it was made from (such as
+	 * "fruits.jpg", empty when unknown) for tooltips. Unknown pictures get no answer.
+	 */
+	public record Part(String hash, String name, int index, int count, byte[] png) implements CustomPacketPayload {
 		public static final Type<Part> TYPE = new Type<>(Typestones.id("picture_part"));
 		public static final StreamCodec<ByteBuf, Part> STREAM_CODEC = StreamCodec.composite(
 				ByteBufCodecs.stringUtf8(64), Part::hash,
+				ByteBufCodecs.stringUtf8(PictureInfo.MAX_NAME), Part::name,
 				ByteBufCodecs.VAR_INT, Part::index,
 				ByteBufCodecs.VAR_INT, Part::count,
 				ByteBufCodecs.byteArray(PART_SIZE), Part::png,

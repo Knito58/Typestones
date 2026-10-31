@@ -1,8 +1,16 @@
 package de.knito.typestones.block;
 
+import java.util.function.Consumer;
+import java.util.function.Function;
+
+import org.jspecify.annotations.Nullable;
+
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.block.Block;
 
 import de.knito.typestones.ModComponents;
@@ -15,6 +23,12 @@ import de.knito.typestones.picture.PictureTile;
  * has the typestones:picture component instead.
  */
 public class TypestoneItem extends BlockItem {
+	/**
+	 * The name a picture was made from (such as "fruits.jpg"), by hash, or null while unknown. The game
+	 * that shows tooltips sets it; it knows the names of the pictures it fetched from the server.
+	 */
+	public static Function<String, @Nullable String> pictureNames = hash -> null;
+
 	public TypestoneItem(Block block, Properties properties) {
 		super(block, properties);
 	}
@@ -59,5 +73,22 @@ public class TypestoneItem extends BlockItem {
 			return super.getName(stack);
 		}
 		return Component.translatable("item.typestones.typestone.with_glyph", super.getName(stack), text);
+	}
+
+	/** A picture stone tells which picture it belongs to, so stones of several pictures can't get mixed up. */
+	@Override
+	public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
+		PictureTile tile = stack.get(ModComponents.PICTURE);
+		if (tile != null) {
+			pictureLine(tile.hash(), tooltip);
+		}
+	}
+
+	/** "From fruits.jpg", in gray, when the name is known. */
+	public static void pictureLine(String hash, Consumer<Component> tooltip) {
+		String name = pictureNames.apply(hash);
+		if (name != null && !name.isEmpty()) {
+			tooltip.accept(Component.translatable("item.typestones.typestone.picture_name", name).withStyle(ChatFormatting.GRAY));
+		}
 	}
 }

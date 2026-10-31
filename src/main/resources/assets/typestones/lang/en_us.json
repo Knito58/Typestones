@@ -62,6 +62,7 @@
 	"block.typestones.potted_pencil": "Potted Pencil",
 	"advancements.typestones.potted_pencil.title": "Potted Pencil",
 	"advancements.typestones.potted_pencil.description": "Retire a pencil whose line is written to a flower pot",
+	"item.typestones.typestone.picture_name": "From %s",
 	"item.typestones.typestone.with_picture": "%s (picture %s, %s of %s × %s)",
 	"item.typestones.rgb_dye": "RGB Dye",
 	"message.typestones.picture_library_full": "The picture library of this world is full (%s pictures). Ask an operator to remove unused pictures.",

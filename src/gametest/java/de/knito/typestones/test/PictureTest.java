@@ -36,6 +36,7 @@ import de.knito.typestones.Typestones;
 import de.knito.typestones.TypestonesConfig;
 import de.knito.typestones.block.TypestoneBlock;
 import de.knito.typestones.block.TypestoneBlockEntity;
+import de.knito.typestones.network.PicturePayloads;
 import de.knito.typestones.picture.Picture;
 import de.knito.typestones.picture.PictureInfo;
 import de.knito.typestones.picture.PictureLibrary;
@@ -43,6 +44,17 @@ import de.knito.typestones.picture.PictureTile;
 
 /** Pictures: their pixels and hash, the library, the stones and which way they lie when placed. */
 public class PictureTest {
+	@GameTest
+	public void picturePartCarriesTheName(GameTestHelper helper) {
+		PicturePayloads.Part part = new PicturePayloads.Part("cafe", "fruits.jpg", 0, 1, new byte[] {1, 2, 3});
+		ByteBuf buf = Unpooled.buffer();
+		PicturePayloads.Part.STREAM_CODEC.encode(buf, part);
+		PicturePayloads.Part back = PicturePayloads.Part.STREAM_CODEC.decode(buf);
+		helper.assertTrue(back.name().equals("fruits.jpg") && back.hash().equals("cafe") && back.png().length == 3,
+				"The picture part changed on the way: " + back);
+		helper.succeed();
+	}
+
 	@GameTest
 	public void pictureSurvivesPng(GameTestHelper helper) {
 		Picture picture = ModPictures.testPicture(3, 2);
