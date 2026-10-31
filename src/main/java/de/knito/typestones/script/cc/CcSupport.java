@@ -32,7 +32,7 @@ import de.knito.typestones.typewriter.TypewriterBlockEntity;
 public final class CcSupport {
 	public static final String TYPE = "typewriter";
 
-	private static final List<String> METHODS = List.of("setText", "getText", "go", "stop", "isRunning", "isPainting", "getStatus",
+	private static final List<String> METHODS = List.of("setText", "getText", "go", "stop", "isRunning", "isPainting", "getStatus", "getStatusText",
 			"getProgress", "setRepeat", "getRepeat", "getCost", "drawImage", "claim", "release", "isClaimed");
 	/** Functions that change the Typewriter and are refused while another computer holds it. */
 	private static final Set<String> CHANGING = Set.of("setText", "go", "stop", "setRepeat", "drawImage");
@@ -118,6 +118,7 @@ public final class CcSupport {
 				case "isRunning" -> new Object[] {script.isRunning()};
 				case "isPainting" -> new Object[] {script.isPainting()};
 				case "getStatus" -> new Object[] {script.getStatus()};
+				case "getStatusText" -> new Object[] {script.getStatusText()};
 				case "getProgress" -> script.getProgress();
 				case "setRepeat" -> script.setRepeat(whole(args, 0));
 				case "getRepeat" -> new Object[] {script.getRepeat()};

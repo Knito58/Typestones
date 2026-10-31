@@ -60,6 +60,7 @@ public final class BillboardSupport {
 					.add("isRunning", args -> script.isRunning())
 					.add("isPainting", args -> script.isPainting())
 					.add("getStatus", args -> script.getStatus())
+					.add("getStatusText", args -> script.getStatusText())
 					.add("getProgress", args -> script.getProgress())
 					.add("setRepeat", changing(script, args -> script.setRepeat(args.integer(1))))
 					.add("getRepeat", args -> script.getRepeat())
