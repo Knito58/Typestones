@@ -121,10 +121,15 @@ public class ModPictures {
 
 	/** The Typestones that carry the picture, one per tile, row by row from the top left. */
 	public static List<ItemStack> stones(Picture picture) {
+		return stones(picture, PictureTile.Plane.ANY);
+	}
+
+	/** The same, for a picture that always stands or always lies, whatever side the stones are clicked on. */
+	public static List<ItemStack> stones(Picture picture, PictureTile.Plane plane) {
 		ItemStack[] stones = new ItemStack[picture.cols() * picture.rows()];
 		for (int row = 0; row < picture.rows(); row++) {
 			for (int col = 0; col < picture.cols(); col++) {
-				stones[row * picture.cols() + col] = ModBlocks.TYPESTONE_ITEM.pictureStack(PictureTile.of(picture, col, row));
+				stones[row * picture.cols() + col] = ModBlocks.TYPESTONE_ITEM.pictureStack(PictureTile.of(picture, col, row, plane));
 			}
 		}
 		return List.of(stones);
@@ -205,7 +210,8 @@ public class ModPictures {
 			context.getSource().sendFailure(Component.translatable("commands.typestones.picture.no_file", name, folder.toString()));
 			return 0;
 		}
-		Picture picture = Picture.fit(image, IntegerArgumentType.getInteger(context, "cols"), IntegerArgumentType.getInteger(context, "rows"));
+		Picture picture = Picture.of(image, IntegerArgumentType.getInteger(context, "cols"), IntegerArgumentType.getInteger(context, "rows"),
+				TypestonesConfig.get().pictureResolution(), Picture.Mode.FILL);
 		return give(context, picture, name);
 	}
 

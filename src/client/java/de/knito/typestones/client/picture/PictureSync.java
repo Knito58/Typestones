@@ -100,8 +100,10 @@ public final class PictureSync {
 			Typestones.LOGGER.warn("The server sent a broken picture {}: {}", hash, e.toString());
 			return;
 		}
-		if (image.getWidth() % Picture.PIXELS != 0 || image.getHeight() % Picture.PIXELS != 0
-				|| image.getWidth() > Picture.MAX_STONES * Picture.PIXELS || image.getHeight() > Picture.MAX_STONES * Picture.PIXELS) {
+		// Whole stones of 16, 32 or 64 px; the stones know how many, the texture is only cut by fractions.
+		int most = Picture.MAX_STONES * Picture.RESOLUTIONS.getLast();
+		int least = Picture.RESOLUTIONS.getFirst();
+		if (image.getWidth() % least != 0 || image.getHeight() % least != 0 || image.getWidth() > most || image.getHeight() > most) {
 			Typestones.LOGGER.warn("The server sent picture {} in a wrong size", hash);
 			image.close();
 			return;

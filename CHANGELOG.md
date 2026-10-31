@@ -45,4 +45,9 @@ First version for Minecraft 26.3 (Fabric). Needed on client and server.
   new pictures (16, 32 or 64 px per stone; pictures keep the resolution they were made with), largest
   picture (8 x 8 stones by default, up to 16 x 16), and how far picture stones are drawn (4 chunks by
   default).
+- Pictures keep their own resolution (16, 32 or 64 px per stone; the first pictures are 32 px), may
+  have transparent pixels that show the plain stone beneath, and can be made for a wall or lying
+  flat, so their stones stand or lie that way whatever side they are clicked on. Images go in as
+  `fit` (whole image, transparent bars), `fill` (covers all, cuts what sticks out) or `stretch`,
+  the words of the Billboard Engine.
 - Characters: the set of Billboard Engine (A–Z, a–z, 0–9, punctuation, Ä Ö Ü ä ö ü ß, ° · €).

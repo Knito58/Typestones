@@ -100,8 +100,9 @@ public class PictureStoneRenderer implements BlockEntityRenderer<TypestoneBlockE
 		if (state.texture == null || front == null && back == null) {
 			return;
 		}
-		// Drawn later in the frame: only the sides themselves go along, not the reused state.
-		collector.submitCustomGeometry(poseStack, RenderTypes.entitySolid(state.texture), (pose, consumer) -> {
+		// Drawn later in the frame: only the sides themselves go along, not the reused state. Cutout:
+		// transparent pixels show the plain stone of the block model beneath.
+		collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(state.texture), (pose, consumer) -> {
 			if (front != null) {
 				quad(pose, consumer, front);
 			}

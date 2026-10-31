@@ -47,8 +47,8 @@ public class TypestoneBlock extends BaseEntityBlock {
 	/**
 	 * Letter, dyes and picture come from the item's components through the block entity. A picture
 	 * stone placed against a stone of the same picture lies the same way as that one, so a picture
-	 * can't get mixed up; otherwise clicking a floor or ceiling makes it flat, clicking a wall makes it
-	 * stand.
+	 * can't get mixed up. Otherwise it lies as its picture was made (wall or flat), or for pictures
+	 * made without a plane, clicking a floor or ceiling makes it flat, clicking a wall makes it stand.
 	 */
 	@Override
 	public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
@@ -64,7 +64,11 @@ public class TypestoneBlock extends BaseEntityBlock {
 				&& stone.picture() != null && stone.picture().hash().equals(tile.hash())) {
 			return state.setValue(FACING, clicked.getValue(FACING)).setValue(FLAT, clicked.getValue(FLAT));
 		}
-		return state.setValue(FLAT, context.getClickedFace().getAxis().isVertical());
+		return state.setValue(FLAT, switch (tile.plane()) {
+			case WALL -> false;
+			case FLAT -> true;
+			case ANY -> context.getClickedFace().getAxis().isVertical();
+		});
 	}
 
 	/** The side on which a picture stone shows its tile as seen from the front of the picture. */
