@@ -329,10 +329,12 @@ public class PencilTest {
 	@GameTest
 	public void emptyPencilIsThrownLikeAnEgg(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		BlockPos at = helper.absolutePos(new BlockPos(1, 2, 1));
+		player.setPos(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
 		player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModPencil.ITEM));
 		ModPencil.ITEM.use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
 		helper.assertTrue(player.getMainHandItem().isEmpty(), "The empty pencil is still in the hand");
-		AABB around = new AABB(player.blockPosition()).inflate(8);
+		AABB around = new AABB(at).inflate(8);
 		helper.assertTrue(helper.getLevel().getEntitiesOfClass(ItemEntity.class, around, d -> PencilToss.isEmptyPencil(d.getItem())).size() == 1,
 				"The thrown pencil isn't flying");
 		helper.runAfterDelay(20, () -> {
