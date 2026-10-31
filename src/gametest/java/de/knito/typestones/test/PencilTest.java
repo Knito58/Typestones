@@ -97,9 +97,12 @@ public class PencilTest {
 				|| !(helper.getBlockEntity(pos.west(), ChestBlockEntity.class) instanceof ChestBlockEntity chest)) {
 			throw helper.assertionException(Component.literal("Typewriter or chest missing"));
 		}
+		typewriter.dyeSamples().setItem(TypewriterBlockEntity.SLOT_LETTER, new ItemStack(TypewriterBlockEntity.dyeItem(DyeColor.RED)));
 		typewriter.applySettings("A", 1, FontSettings.DEFAULT);
 		typewriter.start(List.of(), new LetterLibrary());
 		typewriter.stop();
+		helper.assertTrue(typewriter.makePencil().isEmpty() && typewriter.status() == TypewriterStatus.NEEDS_STICK,
+				"Expected a line and no stick yet: " + typewriter.status());
 
 		ItemStack empty = new ItemStack(ModPencil.ITEM);
 		empty.set(DataComponents.CUSTOM_NAME, Component.literal("Old Faithful"));
