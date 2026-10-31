@@ -8,7 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Common entrypoint (runs on client and server): registers the components, the Typestone blocks, the Typewriter, the pencil and the letter library.
+ * Common entrypoint (runs on client and server): registers the components, the Typestone blocks, the Typewriter, the pencil, the letter library and the pictures.
  */
 public class Typestones implements ModInitializer {
 	public static final String MOD_ID = "typestones";
@@ -25,5 +25,6 @@ public class Typestones implements ModInitializer {
 		ModTypewriter.initialize();
 		ModPencil.initialize();
 		ModLetters.initialize();
+		ModPictures.initialize();
 	}
 }

@@ -27,4 +27,17 @@ First version for Minecraft 26.3 (Fabric). Needed on client and server.
   away bursts into a tiny firework in its colors; put into a flower pot it earns "Potted Pencil".
 - Commands: `/typestones letters` counts the library, `/typestones letter [hash]` shows a letter's data
   (without hash: the Typestone in hand), `/typestones letter <hash> remove` (operators) removes one.
+- Pictures (first step; typing them will come with the Lua box of the Billboard API): a picture
+  covers several stones at 32 x 32 full-color pixels per stone. A picture stone shows its part on two
+  opposite sides only, front and back on a wall, top and bottom on a floor or ceiling; the back and
+  the underside show the opposite stone's part, so the picture reads right and without seams from both
+  sides. The other four sides are plain smooth stone. A stone placed on a floor or ceiling lies flat,
+  on a wall it stands, and against a stone of the same picture it lies like that one. Pictures are
+  kept per world (data/typestones/pictures, at most 1,024) and sent to players when they see them.
+  Operator commands to try them: `/typestones picture test <cols> <rows>`, `/typestones picture load
+  <file> <cols> <rows>` (PNG or JPEG from the world's data/typestones/import folder, scaled to fill
+  and cut at two sides to keep its proportions), `/typestones picture remove <hash>`, and
+  `/typestones pictures` counts them.
+- RGB dye: black, white, red, green and blue dye make 5 RGB dye (shapeless). Picture stones will cost
+  one each.
 - Characters: the set of Billboard Engine (A–Z, a–z, 0–9, punctuation, Ä Ö Ü ä ö ü ß, ° · €).

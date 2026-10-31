@@ -9,6 +9,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
 
 import de.knito.typestones.block.Dyes;
 import de.knito.typestones.pencil.PencilLine;
+import de.knito.typestones.picture.PictureTile;
 
 public class ModComponents {
 	/** Hash of the letter (see Letters); absent on a plain block. */
@@ -28,6 +29,16 @@ public class ModComponents {
 			DataComponentType.<Dyes>builder()
 					.persistent(Dyes.CODEC)
 					.networkSynchronized(Dyes.STREAM_CODEC)
+					.build()
+	);
+
+	/** The part of a picture a Typestone carries; absent on stones without a picture. */
+	public static final DataComponentType<PictureTile> PICTURE = Registry.register(
+			BuiltInRegistries.DATA_COMPONENT_TYPE,
+			Typestones.id("picture"),
+			DataComponentType.<PictureTile>builder()
+					.persistent(PictureTile.CODEC)
+					.networkSynchronized(PictureTile.STREAM_CODEC)
 					.build()
 	);
 

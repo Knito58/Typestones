@@ -61,5 +61,14 @@
 	"item.typestones.pencil.no_typewriter": "The pencil's Typewriter is gone",
 	"block.typestones.potted_pencil": "Potted Pencil",
 	"advancements.typestones.potted_pencil.title": "Potted Pencil",
-	"advancements.typestones.potted_pencil.description": "Retire a pencil whose line is written to a flower pot"
+	"advancements.typestones.potted_pencil.description": "Retire a pencil whose line is written to a flower pot",
+	"item.typestones.typestone.with_picture": "%s (picture %s, %s of %s × %s)",
+	"item.typestones.rgb_dye": "RGB Dye",
+	"message.typestones.picture_library_full": "The picture library of this world is full (%s pictures). Ask an operator to remove unused pictures.",
+	"commands.typestones.pictures": "The picture library holds %s of at most %s pictures.",
+	"commands.typestones.picture.given": "Made a picture of %s × %s stones, hash %s. Place the stones row by row from the top left; they lie like the stone you place them against.",
+	"commands.typestones.picture.no_file": "Can't read the picture %s. Put PNG or JPEG files into %s.",
+	"commands.typestones.picture.not_saved": "Can't save the picture: %s",
+	"commands.typestones.picture.unknown": "No picture with hash %s.",
+	"commands.typestones.picture.removed": "Removed picture %s. Stones with it now show as plain stone."
 }

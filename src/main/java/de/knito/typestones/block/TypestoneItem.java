@@ -7,10 +7,12 @@ import net.minecraft.world.level.block.Block;
 
 import de.knito.typestones.ModComponents;
 import de.knito.typestones.letter.Letters;
+import de.knito.typestones.picture.PictureTile;
 
 /**
  * The Typestone item. Its letter is in the typestones:letter component and its dyes are in the
- * typestones:dyes component; the plain stone has neither, so all plain stones stack.
+ * typestones:dyes component; the plain stone has neither, so all plain stones stack. A picture stone
+ * has the typestones:picture component instead.
  */
 public class TypestoneItem extends BlockItem {
 	public TypestoneItem(Block block, Properties properties) {
@@ -29,6 +31,13 @@ public class TypestoneItem extends BlockItem {
 		return stack;
 	}
 
+	/** A Typestone with one tile of a picture. */
+	public ItemStack pictureStack(PictureTile tile) {
+		ItemStack stack = new ItemStack(this);
+		stack.set(ModComponents.PICTURE, tile);
+		return stack;
+	}
+
 	public static String letter(ItemStack stack) {
 		return stack.getOrDefault(ModComponents.LETTER, Letters.NONE);
 	}
@@ -37,9 +46,14 @@ public class TypestoneItem extends BlockItem {
 		return stack.getOrDefault(ModComponents.DYES, Dyes.DEFAULT);
 	}
 
-	/** "Typestone "A"", or just "Typestone" for the plain block and unknown letters. */
+	/** "Typestone "A"", "Typestone (picture 2, 1 of 4 × 3)", or just "Typestone" for the plain block and unknown letters. */
 	@Override
 	public Component getName(ItemStack stack) {
+		PictureTile tile = stack.get(ModComponents.PICTURE);
+		if (tile != null) {
+			return Component.translatable("item.typestones.typestone.with_picture", super.getName(stack),
+					tile.col() + 1, tile.row() + 1, tile.cols(), tile.rows());
+		}
 		String text = Letters.text(letter(stack));
 		if (text.isEmpty()) {
 			return super.getName(stack);

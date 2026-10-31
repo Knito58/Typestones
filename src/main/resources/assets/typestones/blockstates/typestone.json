@@ -1,8 +1,12 @@
 {
 	"variants": {
-		"facing=north": { "fabric:type": "typestones:typestone" },
-		"facing=east": { "fabric:type": "typestones:typestone" },
-		"facing=south": { "fabric:type": "typestones:typestone" },
-		"facing=west": { "fabric:type": "typestones:typestone" }
+		"facing=north,flat=false": { "fabric:type": "typestones:typestone" },
+		"facing=north,flat=true": { "fabric:type": "typestones:typestone" },
+		"facing=east,flat=false": { "fabric:type": "typestones:typestone" },
+		"facing=east,flat=true": { "fabric:type": "typestones:typestone" },
+		"facing=south,flat=false": { "fabric:type": "typestones:typestone" },
+		"facing=south,flat=true": { "fabric:type": "typestones:typestone" },
+		"facing=west,flat=false": { "fabric:type": "typestones:typestone" },
+		"facing=west,flat=true": { "fabric:type": "typestones:typestone" }
 	}
 }

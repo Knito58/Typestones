@@ -61,5 +61,14 @@
 	"item.typestones.pencil.no_typewriter": "Die Schreibmaschine des Bleistifts ist weg",
 	"block.typestones.potted_pencil": "Eingetopfter Bleistift",
 	"advancements.typestones.potted_pencil.title": "Eingetopfter Bleistift",
-	"advancements.typestones.potted_pencil.description": "Setze einen Bleistift, dessen Zeile geschrieben ist, in einen Blumentopf zur Ruhe"
+	"advancements.typestones.potted_pencil.description": "Setze einen Bleistift, dessen Zeile geschrieben ist, in einen Blumentopf zur Ruhe",
+	"item.typestones.typestone.with_picture": "%s (Bild %s, %s von %s × %s)",
+	"item.typestones.rgb_dye": "RGB-Farbstoff",
+	"message.typestones.picture_library_full": "Die Bildbibliothek dieser Welt ist voll (%s Bilder). Bitte einen Operator, unbenutzte Bilder zu entfernen.",
+	"commands.typestones.pictures": "Die Bildbibliothek enthält %s von höchstens %s Bildern.",
+	"commands.typestones.picture.given": "Bild aus %s × %s Steinen erstellt, Hash %s. Setze die Steine Reihe für Reihe von oben links; sie liegen wie der Stein, an den du sie setzt.",
+	"commands.typestones.picture.no_file": "Das Bild %s kann nicht gelesen werden. Lege PNG- oder JPEG-Dateien in %s ab.",
+	"commands.typestones.picture.not_saved": "Das Bild kann nicht gespeichert werden: %s",
+	"commands.typestones.picture.unknown": "Kein Bild mit dem Hash %s.",
+	"commands.typestones.picture.removed": "Bild %s entfernt. Steine damit zeigen jetzt glatten Stein."
 }
