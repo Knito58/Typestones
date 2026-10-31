@@ -24,7 +24,6 @@ import org.jspecify.annotations.Nullable;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 
 import de.knito.typestones.ModTypewriter;
-import de.knito.typestones.picture.PictureTile;
 
 public class TypewriterMenu extends AbstractContainerMenu {
 	/** Sent to the client when the screen opens. */
@@ -49,9 +48,9 @@ public class TypewriterMenu extends AbstractContainerMenu {
 	/** Only set on the server. */
 	private final @Nullable TypewriterBlockEntity typewriter;
 	private final Player player;
-	/** Pictures with stones in the output, by hash: on the server what was sent last, on the client what arrived. */
-	private @Nullable List<String> pencilPictures;
-	private int pencilPicturesDelay;
+	/** What the Pencil button offers: on the server what was sent last, on the client what arrived. */
+	private @Nullable List<TypewriterActionPayload.PencilChoice> pencilChoices;
+	private int pencilChoicesDelay;
 
 	/** Client side. */
 	public TypewriterMenu(int containerId, Inventory inventory, OpenData openData) {
@@ -130,28 +129,28 @@ public class TypewriterMenu extends AbstractContainerMenu {
 		return data.get(4) != 0;
 	}
 
-	/** The pictures the pencil chooser offers besides the last job. */
-	public List<String> pencilPictures() {
-		return pencilPictures == null ? List.of() : pencilPictures;
+	/** The pencil choices, the last job first. */
+	public List<TypewriterActionPayload.PencilChoice> pencilChoices() {
+		return pencilChoices == null ? List.of() : pencilChoices;
 	}
 
 	/** Client side: the server's list arrived. */
-	public void setPencilPictures(List<String> hashes) {
-		pencilPictures = List.copyOf(hashes);
+	public void setPencilChoices(List<TypewriterActionPayload.PencilChoice> choices) {
+		pencilChoices = List.copyOf(choices);
 	}
 
-	/** Twice a second, the player gets the pictures in the output when they changed. */
+	/** Twice a second, the player gets the pencil choices when they changed. */
 	@Override
 	public void broadcastChanges() {
 		super.broadcastChanges();
-		if (typewriter == null || !(player instanceof ServerPlayer serverPlayer) || --pencilPicturesDelay > 0) {
+		if (typewriter == null || !(player instanceof ServerPlayer serverPlayer) || --pencilChoicesDelay > 0) {
 			return;
 		}
-		pencilPicturesDelay = 10;
-		List<String> hashes = typewriter.outputPictures().stream().map(PictureTile::hash).toList();
-		if (!hashes.equals(pencilPictures)) {
-			pencilPictures = hashes;
-			ServerPlayNetworking.send(serverPlayer, new TypewriterActionPayload.PencilPictures(hashes));
+		pencilChoicesDelay = 10;
+		List<TypewriterActionPayload.PencilChoice> choices = typewriter.pencilChoices();
+		if (!choices.equals(pencilChoices)) {
+			pencilChoices = choices;
+			ServerPlayNetworking.send(serverPlayer, new TypewriterActionPayload.PencilChoices(choices));
 		}
 	}
 

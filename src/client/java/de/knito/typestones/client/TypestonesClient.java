@@ -39,9 +39,9 @@ public class TypestonesClient implements ClientModInitializer {
 				context -> new PictureStoneRenderer());
 
 		MenuScreens.register(ModTypewriter.MENU, TypewriterScreen::new);
-		ClientPlayNetworking.registerGlobalReceiver(TypewriterActionPayload.PencilPictures.TYPE, (payload, context) -> {
+		ClientPlayNetworking.registerGlobalReceiver(TypewriterActionPayload.PencilChoices.TYPE, (payload, context) -> {
 			if (context.player().containerMenu instanceof TypewriterMenu menu) {
-				menu.setPencilPictures(payload.hashes());
+				menu.setPencilChoices(payload.choices());
 			}
 		});
 	}

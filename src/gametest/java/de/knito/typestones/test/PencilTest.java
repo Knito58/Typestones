@@ -42,6 +42,7 @@ import de.knito.typestones.picture.PictureTile;
 import de.knito.typestones.pencil.PencilToss;
 import de.knito.typestones.pencil.PottedPencilBlock;
 import de.knito.typestones.typewriter.FontSettings;
+import de.knito.typestones.typewriter.TypewriterActionPayload;
 import de.knito.typestones.typewriter.TypewriterBlock;
 import de.knito.typestones.typewriter.TypewriterBlockEntity;
 import de.knito.typestones.typewriter.TypewriterStatus;
@@ -236,6 +237,13 @@ public class PencilTest {
 		output.setItem(3, ModBlocks.TYPESTONE_ITEM.pictureStack(fruits.tile(0)));
 		List<String> found = typewriter.outputPictures().stream().map(PictureTile::hash).toList();
 		helper.assertTrue(found.equals(List.of("f00d", "5a1")), "Pictures in the output: " + found);
+		List<TypewriterActionPayload.PencilChoice> choices = typewriter.pencilChoices();
+		helper.assertTrue(choices.equals(List.of(new TypewriterActionPayload.PencilChoice("f00d", "", 3, 2),
+				new TypewriterActionPayload.PencilChoice("5a1", "", 2, 1))), "Pencil choices: " + choices);
+		ByteBuf buf = Unpooled.buffer();
+		TypewriterActionPayload.PencilChoices.STREAM_CODEC.encode(buf, new TypewriterActionPayload.PencilChoices(choices));
+		helper.assertTrue(choices.equals(TypewriterActionPayload.PencilChoices.STREAM_CODEC.decode(buf).choices()),
+				"The pencil choices changed on the way");
 
 		input.setItem(0, new ItemStack(Items.STICK, 2));
 		input.setItem(1, new ItemStack(Items.SMOOTH_STONE, 2));
