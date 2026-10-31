@@ -464,9 +464,10 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		@Override
 		protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
 			extractDefaultSprite(graphics);
-			graphics.item(icon, getX() + 1, getY() + 1);
-			String label = cut(getMessage().getString(), getWidth() - 23);
-			graphics.text(font, label, getX() + 19, getY() + (getHeight() - 8) / 2, active ? 0xFFFFFFFF : 0xFFA0A0A0, true);
+			// One pixel up and right of the corner: the pencil drawing leans to the bottom left.
+			graphics.item(icon, getX() + 2, getY());
+			String label = cut(getMessage().getString(), getWidth() - 24);
+			graphics.text(font, label, getX() + 20, getY() + (getHeight() - 8) / 2, active ? 0xFFFFFFFF : 0xFFA0A0A0, true);
 		}
 	}
 
