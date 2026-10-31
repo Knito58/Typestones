@@ -39,16 +39,34 @@ public record TypewriterActionPayload(Action action, String text, int repeat, Fo
 		return TYPE;
 	}
 
-	/** Server to client: the pictures with stones in the output, by hash, for the pencil chooser. */
-	public record PencilPictures(List<String> hashes) implements CustomPacketPayload {
-		public static final Type<PencilPictures> TYPE = new Type<>(Typestones.id("typewriter_pencil_pictures"));
-		public static final StreamCodec<ByteBuf, PencilPictures> STREAM_CODEC = StreamCodec.composite(
-				ByteBufCodecs.stringUtf8(64).apply(ByteBufCodecs.list(TypewriterBlockEntity.MAX_PENCIL_PICTURES)), PencilPictures::hashes,
-				PencilPictures::new
+	/**
+	 * What the Pencil button can make a pencil for: a line (empty hash, its text, stones as cols, rows 1)
+	 * or a picture (its hash and size in stones).
+	 */
+	public record PencilChoice(String hash, String text, int cols, int rows) {
+		public static final StreamCodec<ByteBuf, PencilChoice> STREAM_CODEC = StreamCodec.composite(
+				ByteBufCodecs.stringUtf8(64), PencilChoice::hash,
+				ByteBufCodecs.stringUtf8(TypewriterBlockEntity.MAX_TEXT_LENGTH * 4), PencilChoice::text,
+				ByteBufCodecs.VAR_INT, PencilChoice::cols,
+				ByteBufCodecs.VAR_INT, PencilChoice::rows,
+				PencilChoice::new
+		);
+
+		public boolean isLine() {
+			return hash.isEmpty();
+		}
+	}
+
+	/** Server to client: the pencil choices, the last job first, then the other pictures in the output. */
+	public record PencilChoices(List<PencilChoice> choices) implements CustomPacketPayload {
+		public static final Type<PencilChoices> TYPE = new Type<>(Typestones.id("typewriter_pencil_choices"));
+		public static final StreamCodec<ByteBuf, PencilChoices> STREAM_CODEC = StreamCodec.composite(
+				PencilChoice.STREAM_CODEC.apply(ByteBufCodecs.list(TypewriterBlockEntity.MAX_PENCIL_PICTURES + 1)), PencilChoices::choices,
+				PencilChoices::new
 		);
 
 		@Override
-		public Type<PencilPictures> type() {
+		public Type<PencilChoices> type() {
 			return TYPE;
 		}
 	}

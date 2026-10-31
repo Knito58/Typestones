@@ -509,6 +509,25 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 		return List.copyOf(found.values());
 	}
 
+	/**
+	 * What the Pencil button offers: the last job first (a picture, or a line with its text), then the
+	 * other pictures with stones in the output. A line is the choice with an empty hash.
+	 */
+	public List<TypewriterActionPayload.PencilChoice> pencilChoices() {
+		List<TypewriterActionPayload.PencilChoice> choices = new ArrayList<>();
+		if (pictureJob != null) {
+			choices.add(new TypewriterActionPayload.PencilChoice(pictureJob.hash(), "", pictureJob.cols(), pictureJob.rows()));
+		} else if (!jobLetters.isEmpty()) {
+			choices.add(new TypewriterActionPayload.PencilChoice("", jobText, jobLetters.size(), 1));
+		}
+		for (PictureTile tile : outputPictures()) {
+			if (pictureJob == null || !tile.hash().equals(pictureJob.hash())) {
+				choices.add(new TypewriterActionPayload.PencilChoice(tile.hash(), "", tile.cols(), tile.rows()));
+			}
+		}
+		return choices;
+	}
+
 	/** A pencil for the last job. */
 	public ItemStack makePencil() {
 		return makePencil("");

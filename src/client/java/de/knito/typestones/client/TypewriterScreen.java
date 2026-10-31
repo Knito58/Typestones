@@ -22,9 +22,11 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.Util;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
+import de.knito.typestones.ModPencil;
 import de.knito.typestones.Typestones;
 import de.knito.typestones.client.bake.LetterBaker;
 import de.knito.typestones.client.network.LetterSync;
@@ -66,9 +68,12 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 	private FontSettings settings;
 	/** Which character of the text the preview shows. */
 	private int previewIndex;
-	/** The picture the Pencil button makes a pencil for, by hash; empty for the last job. */
-	private String pencilPicture = "";
-	private Button pencilChoice;
+	/** The pencil choice shown, by hash; empty for the first choice, the last job. */
+	private String pencilHash = "";
+	private PencilButton pencilButton;
+	/** Until this tick the status line says what the pencil is for, after a choice. */
+	private int pencilNoteUntil;
+	private int ticks;
 
 	public TypewriterScreen(TypewriterMenu menu, Inventory inventory, Component title) {
 		super(menu, inventory, title, 176, 212);
@@ -104,22 +109,21 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		addRenderableWidget(Button.builder(Component.translatable("gui.typestones.clear"), b -> preset(""))
 				.bounds(leftPos + 128, topPos + 40, 40, 18).build());
 
-		addRenderableWidget(Button.builder(Component.translatable("gui.typestones.pencil"), b -> send(TypewriterActionPayload.Action.GET_PENCIL))
-				.tooltip(Tooltip.create(Component.translatable("gui.typestones.pencil_tooltip")))
-				.bounds(leftPos + 52, topPos + 64, 44, 18).build());
-
-		addRenderableWidget(Button.builder(Component.literal("-"), b -> changeRepeat(-1))
-				.bounds(leftPos + 100, topPos + 64, 16, 18).build());
-		addRenderableWidget(Button.builder(Component.literal("+"), b -> changeRepeat(1))
-				.bounds(leftPos + 152, topPos + 64, 16, 18).build());
+		pencilButton = addRenderableWidget(new PencilButton(leftPos + 52, topPos + 64, 100, 18));
+		addRenderableWidget(Button.builder(Component.literal("▲"), b -> stepPencil(-1))
+				.bounds(leftPos + 154, topPos + 64, 14, 9).build());
+		addRenderableWidget(Button.builder(Component.literal("▼"), b -> stepPencil(1))
+				.bounds(leftPos + 154, topPos + 73, 14, 9).build());
+		updatePencilButton();
 
 		addRenderableWidget(Button.builder(Component.translatable("gui.typestones.start"), b -> send(TypewriterActionPayload.Action.START))
-				.bounds(leftPos + 8, topPos + 88, 50, 18).build());
+				.bounds(leftPos + 8, topPos + 88, 49, 18).build());
 		addRenderableWidget(Button.builder(Component.translatable("gui.typestones.stop"), b -> send(TypewriterActionPayload.Action.STOP))
-				.bounds(leftPos + 63, topPos + 88, 50, 18).build());
-		pencilChoice = addRenderableWidget(Button.builder(Component.empty(), b -> nextPencilPicture())
-				.bounds(leftPos + 117, topPos + 88, 51, 18).build());
-		updatePencilChoice();
+				.bounds(leftPos + 60, topPos + 88, 49, 18).build());
+		addRenderableWidget(Button.builder(Component.literal("-"), b -> changeRepeat(-1))
+				.bounds(leftPos + 111, topPos + 88, 14, 18).build());
+		addRenderableWidget(Button.builder(Component.literal("+"), b -> changeRepeat(1))
+				.bounds(leftPos + 152, topPos + 88, 16, 18).build());
 
 		int px = panelX();
 		filterBox = new EditBox(font, px + 6, topPos + 18, PANEL_WIDTH - 12, 16, Component.translatable("gui.typestones.font_filter"));
@@ -272,7 +276,7 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 				letters = bakeAndUpload(text);
 			}
 		}
-		ClientPlayNetworking.send(new TypewriterActionPayload(action, text, currentRepeat(), settings, letters, pencilPicture));
+		ClientPlayNetworking.send(new TypewriterActionPayload(action, text, currentRepeat(), settings, letters, pencilHash));
 	}
 
 	/** Also drops what the chosen font can't draw, when this computer has the font. */
@@ -449,38 +453,96 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		graphics.fill(x + w - 1, y, x + w, y + h, color);
 	}
 
-	/** The chooser goes from the last job through the pictures with stones in the output, and around. */
-	private void nextPencilPicture() {
-		List<String> pictures = menu.pencilPictures();
-		int index = pictures.indexOf(pencilPicture) + 1;
-		pencilPicture = index < pictures.size() ? pictures.get(index) : "";
-		updatePencilChoice();
+	/** The Pencil button: a pencil icon and what the pencil will lay. */
+	private final class PencilButton extends Button {
+		private final ItemStack icon = new ItemStack(ModPencil.ITEM);
+
+		PencilButton(int x, int y, int width, int height) {
+			super(x, y, width, height, Component.empty(), b -> send(TypewriterActionPayload.Action.GET_PENCIL), DEFAULT_NARRATION);
+		}
+
+		@Override
+		protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+			extractDefaultSprite(graphics);
+			graphics.item(icon, getX() + 1, getY() + 1);
+			String label = cut(getMessage().getString(), getWidth() - 23);
+			graphics.text(font, label, getX() + 19, getY() + (getHeight() - 8) / 2, active ? 0xFFFFFFFF : 0xFFA0A0A0, true);
+		}
 	}
 
-	/** The chooser shows the image name, cut to fit; names arrive with the pictures. */
-	private void updatePencilChoice() {
-		if (!pencilPicture.isEmpty() && !menu.pencilPictures().contains(pencilPicture)) {
-			pencilPicture = "";
+	/** The text cut to the width, with "…" when something is left out. */
+	private String cut(String text, int width) {
+		return font.width(text) <= width ? text : font.plainSubstrByWidth(text, width - font.width("…")) + "…";
+	}
+
+	private int pencilIndex() {
+		List<TypewriterActionPayload.PencilChoice> choices = menu.pencilChoices();
+		for (int i = 1; i < choices.size(); i++) {
+			if (choices.get(i).hash().equals(pencilHash)) {
+				return i;
+			}
 		}
-		Component full;
-		if (pencilPicture.isEmpty()) {
-			full = Component.translatable("gui.typestones.pencil_last");
-		} else {
-			String name = PictureSync.name(pencilPicture);
-			full = name == null || name.isEmpty()
-					? Component.translatable("gui.typestones.pencil_picture", menu.pencilPictures().indexOf(pencilPicture) + 1)
-					: Component.literal(name);
+		return 0;
+	}
+
+	/** The arrows and the mouse wheel go through the choices, and around. */
+	private void stepPencil(int step) {
+		List<TypewriterActionPayload.PencilChoice> choices = menu.pencilChoices();
+		if (choices.isEmpty()) {
+			return;
 		}
-		String shown = font.plainSubstrByWidth(full.getString(), pencilChoice.getWidth() - 8);
-		pencilChoice.setMessage(Component.literal(shown));
-		pencilChoice.setTooltip(Tooltip.create(Component.translatable("gui.typestones.pencil_choice_tooltip", full)));
+		int index = Math.floorMod(pencilIndex() + step, choices.size());
+		pencilHash = index == 0 ? "" : choices.get(index).hash();
+		pencilNoteUntil = ticks + 60;
+		updatePencilButton();
+	}
+
+	/** What a choice is called: a line's text in quotes, or the image name of a picture. */
+	private Component pencilLabel(TypewriterActionPayload.PencilChoice choice, int index) {
+		if (choice.isLine()) {
+			return Component.literal("\"" + choice.text() + "\"");
+		}
+		String name = PictureSync.name(choice.hash());
+		return name == null || name.isEmpty() ? Component.translatable("gui.typestones.pencil_picture", index + 1) : Component.literal(name);
+	}
+
+	/** Label and tooltip of the Pencil button; the names of pictures arrive with them. */
+	private void updatePencilButton() {
+		List<TypewriterActionPayload.PencilChoice> choices = menu.pencilChoices();
+		int index = pencilIndex();
+		if (index == 0) {
+			pencilHash = "";
+		}
+		if (choices.isEmpty()) {
+			pencilButton.setMessage(Component.translatable("gui.typestones.pencil_none"));
+			pencilButton.setTooltip(Tooltip.create(Component.translatable("gui.typestones.pencil_none_tooltip")));
+			return;
+		}
+		TypewriterActionPayload.PencilChoice choice = choices.get(index);
+		Component label = pencilLabel(choice, index);
+		Component size = choice.isLine()
+				? Component.translatable("gui.typestones.pencil_size_line", choice.cols())
+				: Component.translatable("gui.typestones.pencil_size_picture", choice.cols(), choice.rows());
+		pencilButton.setMessage(label);
+		pencilButton.setTooltip(Tooltip.create(Component.translatable("gui.typestones.pencil_tooltip", label, size)));
+	}
+
+	/** The mouse wheel over the Pencil button chooses what it lays. */
+	@Override
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+		if (pencilButton.active && pencilButton.isMouseOver(mouseX, mouseY) && scrollY != 0) {
+			stepPencil(scrollY > 0 ? -1 : 1);
+			return true;
+		}
+		return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
 	}
 
 	/** While a program holds the Typewriter, every control is greyed out: the screen only watches. */
 	@Override
 	protected void containerTick() {
 		super.containerTick();
-		updatePencilChoice();
+		ticks++;
+		updatePencilButton();
 		boolean free = !menu.claimed();
 		for (var child : children()) {
 			if (child instanceof net.minecraft.client.gui.components.AbstractWidget widget) {
@@ -488,21 +550,31 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 				widget.active = free && !(settings.isClassic() && fontButtons.contains(widget));
 			}
 		}
+		if (menu.pencilChoices().isEmpty()) {
+			pencilButton.active = false;
+		}
 	}
 
 	@Override
 	protected void extractLabels(GuiGraphicsExtractor graphics, int xm, int ym) {
 		super.extractLabels(graphics, xm, ym);
-		graphics.centeredText(font, Component.translatable("gui.typestones.repeat", currentRepeat()), 134, 69, 0xFFFFFFFF);
-		if (menu.total() > 0) {
-			Component progress = Component.translatable("gui.typestones.progress", menu.made(), menu.total());
-			graphics.text(font, progress, imageWidth - 8 - font.width(progress), 93, 0xFF404040, false);
+		graphics.centeredText(font, Component.translatable("gui.typestones.repeat", currentRepeat()), 139, 93, 0xFFFFFFFF);
+		List<TypewriterActionPayload.PencilChoice> choices = menu.pencilChoices();
+		if (ticks < pencilNoteUntil && !choices.isEmpty()) {
+			int index = pencilIndex();
+			Component note = Component.translatable("gui.typestones.pencil_for", pencilLabel(choices.get(index), index), index + 1, choices.size());
+			graphics.text(font, cut(note.getString(), imageWidth - 16), 8, STATUS_Y, 0xFF404040, false);
+			return;
 		}
 		TypewriterStatus status = menu.status();
 		Component line = menu.claimed()
 				? Component.translatable("gui.typestones.claimed", status.describe())
 				: status.describe();
-		graphics.text(font, line, 8, STATUS_Y, menu.claimed() ? 0xFF2040A0 : status.color, false);
+		if (menu.total() > 0) {
+			line = Component.translatable("gui.typestones.status_progress", line,
+					Component.translatable("gui.typestones.progress", menu.made(), menu.total()));
+		}
+		graphics.text(font, cut(line.getString(), imageWidth - 16), 8, STATUS_Y, menu.claimed() ? 0xFF2040A0 : status.color, false);
 	}
 
 	@Override
