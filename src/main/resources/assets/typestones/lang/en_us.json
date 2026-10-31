@@ -51,7 +51,7 @@
 	"item.typestones.pencil.next": "Next stone: %s of %s",
 	"item.typestones.pencil.empty": "Its line is written",
 	"gui.typestones.pencil": "Pencil",
-	"gui.typestones.pencil_tooltip": "Pencil for %s, %s.\nIt places the stones from the inventory at the back, stone by stone. Costs a stick and a smooth stone.\nArrows or mouse wheel: choose the last job or another picture in the output.",
+	"gui.typestones.pencil_tooltip": "Pencil for %s, %s.\nIt places the stones from the inventory at the back, stone by stone. Costs a stick and a smooth stone, or refills an empty pencil from the inputs.\nArrows or mouse wheel: choose the last job or another picture in the output.",
 	"gui.typestones.status.no_line": "Press Start once first",
 	"gui.typestones.status.needs_stick": "A pencil needs a stick",
 	"item.typestones.pencil.missing": "Next stone missing in the Typewriter's chest: %s",

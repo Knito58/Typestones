@@ -11,6 +11,7 @@ import org.jspecify.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -84,6 +85,39 @@ public class PencilTest {
 		PencilLine.STREAM_CODEC.encode(buf, line);
 		helper.assertTrue(line.equals(PencilLine.STREAM_CODEC.decode(buf)), "The pencil line changed on the way");
 		helper.assertTrue(ModPencil.ITEM.getDefaultMaxStackSize() == 1, "Pencils must not stack");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void emptyPencilIsRefilled(GameTestHelper helper) {
+		BlockPos pos = new BlockPos(1, 1, 1);
+		helper.setBlock(pos, ModTypewriter.BLOCK.defaultBlockState().setValue(TypewriterBlock.FACING, Direction.NORTH));
+		helper.setBlock(pos.west(), Blocks.CHEST);
+		if (!(helper.getBlockEntity(pos, TypewriterBlockEntity.class) instanceof TypewriterBlockEntity typewriter)
+				|| !(helper.getBlockEntity(pos.west(), ChestBlockEntity.class) instanceof ChestBlockEntity chest)) {
+			throw helper.assertionException(Component.literal("Typewriter or chest missing"));
+		}
+		typewriter.applySettings("A", 1, FontSettings.DEFAULT);
+		typewriter.start(List.of(), new LetterLibrary());
+		typewriter.stop();
+
+		ItemStack empty = new ItemStack(ModPencil.ITEM);
+		empty.set(DataComponents.CUSTOM_NAME, Component.literal("Old Faithful"));
+		chest.setItem(0, new ItemStack(Items.STICK));
+		chest.setItem(1, new ItemStack(Items.SMOOTH_STONE));
+		chest.setItem(2, empty);
+		ItemStack pencil = typewriter.makePencil();
+		helper.assertTrue(pencil.has(ModComponents.PENCIL_LINE), "No pencil from the empty one: " + typewriter.status());
+		helper.assertTrue(chest.getItem(2).isEmpty(), "The empty pencil is still in the chest");
+		helper.assertTrue(chest.getItem(0).getCount() == 1 && chest.getItem(1).getCount() == 1, "A refill cost a stick or a stone");
+		helper.assertTrue(Component.literal("Old Faithful").equals(pencil.get(DataComponents.CUSTOM_NAME)), "The refilled pencil lost its name");
+
+		// A pencil with a line left is not empty and stays where it is.
+		chest.setItem(2, pencil.copy());
+		ItemStack fresh = typewriter.makePencil();
+		helper.assertTrue(fresh.has(ModComponents.PENCIL_LINE) && chest.getItem(2).has(ModComponents.PENCIL_LINE)
+						&& chest.getItem(0).isEmpty() && chest.getItem(1).isEmpty(),
+				"A pencil with a line was taken for a refill");
 		helper.succeed();
 	}
 
