@@ -17,6 +17,7 @@ import javax.imageio.stream.ImageInputStream;
 
 import org.jspecify.annotations.Nullable;
 
+import net.minecraft.locale.Language;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Util;
 
@@ -100,6 +101,16 @@ public final class TypewriterScript {
 
 	public String getStatus() {
 		return reason(typewriter.status());
+	}
+
+	/**
+	 * The status as a sentence for people, as the Typewriter's screen shows it. In the language of the
+	 * game that runs the world: the player's own in single player, English on a dedicated server. For
+	 * comparing in a program, use {@link #getStatus()}, whose codes never change.
+	 */
+	public String getStatusText() {
+		String code = getStatus();
+		return Language.getInstance().getOrDefault("gui.typestones.status." + code, code);
 	}
 
 	public Object[] getProgress() {

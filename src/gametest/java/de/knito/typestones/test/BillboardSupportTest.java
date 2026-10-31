@@ -77,7 +77,7 @@ public class BillboardSupportTest {
 			return null;
 		});
 		for (String name : List.of("setText", "getText", "go", "stop", "isRunning", "drawImage", "isPainting", "claim", "release",
-				"isClaimed", "getStatus", "getProgress", "getCost", "setRepeat", "getRepeat")) {
+				"isClaimed", "getStatus", "getStatusText", "getProgress", "getCost", "setRepeat", "getRepeat")) {
 			helper.assertTrue(methods.containsKey(name), "Missing Lua function " + name);
 		}
 
@@ -111,6 +111,8 @@ public class BillboardSupportTest {
 		@SuppressWarnings("unchecked")
 		Map<String, Object> cost = (Map<String, Object>) call(methods, "getCost", second, "cat.png", Map.of("width", 3L, "height", 2L));
 		helper.assertTrue(cost.get("stones").equals(6) && cost.get("missing").equals("needs_stone"), "Cost: " + cost);
+		helper.assertTrue("idle".equals(call(methods, "getStatus", second)), "Status code");
+		helper.assertTrue("Idle".equals(call(methods, "getStatusText", second)), "Status text: " + call(methods, "getStatusText", second));
 		helper.succeed();
 	}
 }

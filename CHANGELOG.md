@@ -54,4 +54,6 @@ First version for Minecraft 26.3 (Fabric). Needed on client and server.
   transparent pixels included. A picture job starts also when items are missing (the program gets a
   warning), waits, and goes on by itself when the inputs are refilled. Programs can ask for the cost
   first. Image files: PNG, JPEG or GIF (first frame), at most 4 MB and 4096 x 4096 pixels.
+  `getStatus()` gives a code for programs (`needs_rgb_dye`), `getStatusText()` the sentence for
+  people ("Waiting for RGB dye").
 - Characters: the set of Billboard Engine (A–Z, a–z, 0–9, punctuation, Ä Ö Ü ä ö ü ß, ° · €).
