@@ -10,7 +10,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
@@ -145,7 +144,7 @@ public final class TypewriterScript {
 	 * @param name  shown in the picture library
 	 * @param bytes read beside the server thread, so a file is read there too
 	 */
-	public CompletableFuture<Object[]> drawImage(String name, Supplier<byte[]> bytes, Map<String, ?> options, String maker) {
+	public CompletableFuture<Object[]> drawImage(String name, ImageSource bytes, Map<String, ?> options, String maker) {
 		Options parsed = Options.of(options);
 		Object @Nullable [] refused = refused(parsed);
 		if (refused != null) {
@@ -155,7 +154,7 @@ public final class TypewriterScript {
 		int pixels = TypestonesConfig.get().pictureResolution();
 		return CompletableFuture.supplyAsync(() -> {
 			try {
-				return (Object) Picture.of(read(bytes.get()), parsed.cols, parsed.rows, pixels, parsed.mode);
+				return (Object) Picture.of(read(bytes.read()), parsed.cols, parsed.rows, pixels, parsed.mode);
 			} catch (ImageProblem problem) {
 				return problem.reason;
 			}
@@ -252,6 +251,73 @@ public final class TypewriterScript {
 			throw new IllegalStateException("Typewriter without a server");
 		}
 		return typewriter.getLevel().getServer();
+	}
+
+	/** Where the bytes of an image come from: a file of the Lua Box, or a program's string. */
+	@FunctionalInterface
+	public interface ImageSource {
+		byte[] read() throws ImageProblem;
+
+		/** A file, refused before reading when it is larger than {@link #MAX_FILE_BYTES}. */
+		static ImageSource file(java.nio.file.Path file) {
+			return () -> {
+				try {
+					if (java.nio.file.Files.size(file) > MAX_FILE_BYTES) {
+						throw new ImageProblem("file_too_large");
+					}
+					return java.nio.file.Files.readAllBytes(file);
+				} catch (IOException e) {
+					throw new ImageProblem("not_found");
+				}
+			};
+		}
+	}
+
+	/** Who holds a claimed Typewriter: one run of one program. */
+	public interface Holder {
+		boolean isActive();
+
+		String describe();
+	}
+
+	/** Takes the Typewriter for this program. Never waits. */
+	public Object[] claim(Holder holder) {
+		Holder current = holder();
+		if (current != null && !current.equals(holder)) {
+			return new Object[] {false, current.describe()};
+		}
+		typewriter.setHolder(holder);
+		return OK;
+	}
+
+	public Object[] release(Holder holder) {
+		if (!holder.equals(holder())) {
+			return new Object[] {false};
+		}
+		typewriter.setHolder(null);
+		return OK;
+	}
+
+	public Object[] isClaimed() {
+		Holder current = holder();
+		return current == null ? new Object[] {false} : new Object[] {true, current.describe()};
+	}
+
+	/** Throws for a program that may not change the Typewriter now, as the Billboard Engine does. */
+	public void checkMayChange(Holder caller) {
+		Holder current = holder();
+		if (current != null && !current.equals(caller)) {
+			throw new IllegalArgumentException("typewriter is claimed by " + current.describe());
+		}
+	}
+
+	private @Nullable Holder holder() {
+		Holder current = typewriter.holder();
+		if (current != null && !current.isActive()) {
+			typewriter.setHolder(null);
+			return null;
+		}
+		return current;
 	}
 
 	/** An image that can't become a picture, with the reason a program gets. */

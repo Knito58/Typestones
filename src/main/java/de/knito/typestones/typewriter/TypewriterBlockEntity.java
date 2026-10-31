@@ -49,6 +49,7 @@ import de.knito.typestones.letter.LetterLibrary;
 import de.knito.typestones.letter.Letters;
 import de.knito.typestones.picture.Picture;
 import de.knito.typestones.picture.PictureTile;
+import de.knito.typestones.script.TypewriterScript;
 
 /**
  * Makes one Typestone per character of a line of text, every {@link #INTERVAL} ticks. The letters come
@@ -128,6 +129,8 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 	private boolean running;
 	private int ticks;
 	private TypewriterStatus status = TypewriterStatus.IDLE;
+	/** The program that claimed the Typewriter; not saved, a claim ends with the program. */
+	private TypewriterScript.@Nullable Holder holder;
 
 	/** Synced to the open screen: 0 = status, 1 = blocks made, 2 = blocks in the job, 3 = repeat. */
 	private final ContainerData data = new ContainerData() {
@@ -227,6 +230,14 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 	public void setRepeat(int repeat) {
 		this.repeat = Math.clamp(repeat, 1, MAX_REPEAT);
 		setChanged();
+	}
+
+	public TypewriterScript.@Nullable Holder holder() {
+		return holder;
+	}
+
+	public void setHolder(TypewriterScript.@Nullable Holder holder) {
+		this.holder = holder;
 	}
 
 	public boolean isRunning() {

@@ -61,6 +61,18 @@ dependencies {
 // A font from elsewhere, e.g. one installed on the computer:
 //   ./gradlew generateGlyphs -Pfont=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf -Pface=dejavu_bold
 sourceSets {
+	// Billboard API, a soft dependency without a maven: a compile-only copy of its API package.
+	billboardApi {
+		compileClasspath += configurations.compileClasspath
+	}
+	main {
+		compileClasspath += billboardApi.output
+	}
+	// The game tests drive the Lua functions directly, so they get the copy at run time too.
+	gametest {
+		compileClasspath += billboardApi.output
+		runtimeClasspath += billboardApi.output
+	}
 	glyphgen {
 		compileClasspath += sourceSets.main.output
 		runtimeClasspath += sourceSets.main.output
