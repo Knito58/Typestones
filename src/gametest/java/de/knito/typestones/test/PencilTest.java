@@ -327,6 +327,38 @@ public class PencilTest {
 	}
 
 	@GameTest
+	public void emptyPencilIsThrownLikeAnEgg(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModPencil.ITEM));
+		ModPencil.ITEM.use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
+		helper.assertTrue(player.getMainHandItem().isEmpty(), "The empty pencil is still in the hand");
+		AABB around = new AABB(player.blockPosition()).inflate(8);
+		helper.assertTrue(helper.getLevel().getEntitiesOfClass(ItemEntity.class, around, d -> PencilToss.isEmptyPencil(d.getItem())).size() == 1,
+				"The thrown pencil isn't flying");
+		helper.runAfterDelay(20, () -> {
+			helper.assertTrue(helper.getLevel().getEntitiesOfClass(ItemEntity.class, around, d -> PencilToss.isEmptyPencil(d.getItem())).isEmpty(),
+					"The thrown pencil didn't burst");
+			helper.succeed();
+		});
+	}
+
+	@GameTest
+	public void droppedEmptyPencilBursts(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		BlockPos at = helper.absolutePos(new BlockPos(1, 2, 1));
+		ItemEntity dropped = new ItemEntity(helper.getLevel(), at.getX(), at.getY(), at.getZ(), new ItemStack(ModPencil.ITEM));
+		dropped.setThrower(player);
+		ItemEntity lost = new ItemEntity(helper.getLevel(), at.getX(), at.getY(), at.getZ(), new ItemStack(ModPencil.ITEM));
+		helper.getLevel().addFreshEntity(dropped);
+		helper.getLevel().addFreshEntity(lost);
+		helper.runAfterDelay(20, () -> {
+			helper.assertTrue(dropped.isRemoved(), "The pencil the player dropped didn't burst");
+			helper.assertFalse(lost.isRemoved(), "A pencil nobody threw burst");
+			helper.succeed();
+		});
+	}
+
+	@GameTest
 	public void onlyEmptyPencilBursts(GameTestHelper helper) {
 		BlockPos at = helper.absolutePos(new BlockPos(1, 2, 1));
 		ItemEntity empty = new ItemEntity(helper.getLevel(), at.getX(), at.getY(), at.getZ(), new ItemStack(ModPencil.ITEM));

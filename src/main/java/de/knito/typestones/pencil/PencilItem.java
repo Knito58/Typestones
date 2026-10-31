@@ -45,6 +45,7 @@ public class PencilItem extends Item {
 	}
 
 	/**
+	 * An empty pencil used in the air is thrown like an egg and bursts (see {@link PencilToss}).
 	 * Used in the air before its first stone, a picture pencil switches the corner it starts at: bottom
 	 * left, building up like a wall, or top left, going down like writing on paper.
 	 */
@@ -52,7 +53,13 @@ public class PencilItem extends Item {
 	public InteractionResult use(Level level, Player player, InteractionHand hand) {
 		ItemStack pencil = player.getItemInHand(hand);
 		PencilLine line = pencil.get(ModComponents.PENCIL_LINE);
-		if (line == null || line.picture().isEmpty() || line.next() > 0) {
+		if (line == null) {
+			if (level instanceof ServerLevel server) {
+				PencilToss.throwFromHand(server, player, pencil);
+			}
+			return InteractionResult.SUCCESS;
+		}
+		if (line.picture().isEmpty() || line.next() > 0) {
 			return InteractionResult.PASS;
 		}
 		if (level instanceof ServerLevel) {
