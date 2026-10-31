@@ -18,6 +18,8 @@ loom {
 		// Room for a big mod pack in run/mods, like the memory setting in Prism. Lower it if the PC has less RAM.
 		client {
 			vmArg "-Xmx8G"
+			// A fixed name, so the dev server keeps its op and player data between runs (offline mode).
+			programArgs "--username", "Konitor"
 		}
 		server {
 			runDir "run-server"
