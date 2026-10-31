@@ -3,15 +3,15 @@
 	"id": "typestones",
 	"version": "${version}",
 	"name": "Typestones",
-	"description": "Smooth stone blocks that carry a letter on all six sides in two dye colors, made by the Typewriter from a typed line of text.",
+	"description": "Smooth stone blocks with a letter in two dye colors, and picture stones that show an image, made by the Typewriter from a typed line of text or from an image a program sends it.",
 	"authors": [
 		"Claude",
 		"Konitor"
 	],
 	"contact": {
-		"homepage": "https://github.com/Knito58/typestones",
-		"sources": "https://github.com/Knito58/typestones",
-		"issues": "https://github.com/Knito58/typestones/issues"
+		"homepage": "https://github.com/Knito58/Typestones",
+		"sources": "https://github.com/Knito58/Typestones",
+		"issues": "https://github.com/Knito58/Typestones/issues"
 	},
 	"license": "MIT",
 	"icon": "assets/typestones/icon.png",
