@@ -36,6 +36,7 @@ import de.knito.typestones.letter.LibraryLetter;
 import de.knito.typestones.typewriter.FontSettings;
 import de.knito.typestones.typewriter.TypewriterBlockEntity;
 import de.knito.typestones.typewriter.TypewriterMenu;
+import de.knito.typestones.client.picture.PictureSync;
 import de.knito.typestones.typewriter.TypewriterActionPayload;
 import de.knito.typestones.typewriter.TypewriterStatus;
 
@@ -65,6 +66,9 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 	private FontSettings settings;
 	/** Which character of the text the preview shows. */
 	private int previewIndex;
+	/** The picture the Pencil button makes a pencil for, by hash; empty for the last job. */
+	private String pencilPicture = "";
+	private Button pencilChoice;
 
 	public TypewriterScreen(TypewriterMenu menu, Inventory inventory, Component title) {
 		super(menu, inventory, title, 176, 212);
@@ -113,6 +117,9 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 				.bounds(leftPos + 8, topPos + 88, 50, 18).build());
 		addRenderableWidget(Button.builder(Component.translatable("gui.typestones.stop"), b -> send(TypewriterActionPayload.Action.STOP))
 				.bounds(leftPos + 63, topPos + 88, 50, 18).build());
+		pencilChoice = addRenderableWidget(Button.builder(Component.empty(), b -> nextPencilPicture())
+				.bounds(leftPos + 117, topPos + 88, 51, 18).build());
+		updatePencilChoice();
 
 		int px = panelX();
 		filterBox = new EditBox(font, px + 6, topPos + 18, PANEL_WIDTH - 12, 16, Component.translatable("gui.typestones.font_filter"));
@@ -265,7 +272,7 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 				letters = bakeAndUpload(text);
 			}
 		}
-		ClientPlayNetworking.send(new TypewriterActionPayload(action, text, currentRepeat(), settings, letters));
+		ClientPlayNetworking.send(new TypewriterActionPayload(action, text, currentRepeat(), settings, letters, pencilPicture));
 	}
 
 	/** Also drops what the chosen font can't draw, when this computer has the font. */
@@ -442,10 +449,38 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		graphics.fill(x + w - 1, y, x + w, y + h, color);
 	}
 
+	/** The chooser goes from the last job through the pictures with stones in the output, and around. */
+	private void nextPencilPicture() {
+		List<String> pictures = menu.pencilPictures();
+		int index = pictures.indexOf(pencilPicture) + 1;
+		pencilPicture = index < pictures.size() ? pictures.get(index) : "";
+		updatePencilChoice();
+	}
+
+	/** The chooser shows the image name, cut to fit; names arrive with the pictures. */
+	private void updatePencilChoice() {
+		if (!pencilPicture.isEmpty() && !menu.pencilPictures().contains(pencilPicture)) {
+			pencilPicture = "";
+		}
+		Component full;
+		if (pencilPicture.isEmpty()) {
+			full = Component.translatable("gui.typestones.pencil_last");
+		} else {
+			String name = PictureSync.name(pencilPicture);
+			full = name == null || name.isEmpty()
+					? Component.translatable("gui.typestones.pencil_picture", menu.pencilPictures().indexOf(pencilPicture) + 1)
+					: Component.literal(name);
+		}
+		String shown = font.plainSubstrByWidth(full.getString(), pencilChoice.getWidth() - 8);
+		pencilChoice.setMessage(Component.literal(shown));
+		pencilChoice.setTooltip(Tooltip.create(Component.translatable("gui.typestones.pencil_choice_tooltip", full)));
+	}
+
 	/** While a program holds the Typewriter, every control is greyed out: the screen only watches. */
 	@Override
 	protected void containerTick() {
 		super.containerTick();
+		updatePencilChoice();
 		boolean free = !menu.claimed();
 		for (var child : children()) {
 			if (child instanceof net.minecraft.client.gui.components.AbstractWidget widget) {

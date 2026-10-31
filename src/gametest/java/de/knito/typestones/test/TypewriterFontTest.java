@@ -60,7 +60,7 @@ public class TypewriterFontTest {
 		helper.assertTrue(TEST_FONT.fontName().equals("Test Font Bold"), "Font name: " + TEST_FONT.fontName());
 
 		TypewriterActionPayload sent = new TypewriterActionPayload(TypewriterActionPayload.Action.START, "中 中", 3, TEST_FONT,
-				List.of("a", Letters.NONE, "a"));
+				List.of("a", Letters.NONE, "a"), "cafe");
 		ByteBuf buf = Unpooled.buffer();
 		TypewriterActionPayload.STREAM_CODEC.encode(buf, sent);
 		helper.assertTrue(sent.equals(TypewriterActionPayload.STREAM_CODEC.decode(buf)), "The button packet changed on the way");

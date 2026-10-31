@@ -1,7 +1,9 @@
 package de.knito.typestones.typewriter;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import com.mojang.serialization.Codec;
@@ -44,6 +46,7 @@ import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 
 import de.knito.typestones.ModBlocks;
+import de.knito.typestones.ModComponents;
 import de.knito.typestones.ModPencil;
 import de.knito.typestones.ModPictures;
 import de.knito.typestones.ModTypewriter;
@@ -102,6 +105,11 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 				ByteBufCodecs.idMapper(i -> PictureTile.Plane.values()[Math.clamp(i, 0, PictureTile.Plane.values().length - 1)],
 						PictureTile.Plane::ordinal), PictureJob::plane,
 				PictureJob::new);
+
+		/** The picture a stone belongs to. */
+		public static PictureJob of(PictureTile tile) {
+			return new PictureJob(tile.hash(), tile.cols(), tile.rows(), tile.plane());
+		}
 
 		public PictureJob {
 			cols = Math.clamp(cols, 1, Picture.MAX_STONES);
@@ -475,12 +483,48 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 		return inputs;
 	}
 
-	/**
-	 * Makes a pencil for the last job, from a stick and a smooth stone of the inputs: for a line in the
-	 * current dyes, or for a picture, whose stones it lays row by row. Empty when that fails; the status then says why.
-	 */
+	/** Most pictures the screen offers a pencil for. */
+	public static final int MAX_PENCIL_PICTURES = 8;
+
+	/** The pictures with stones in the output, in the order they are found there, one tile of each. */
+	public List<PictureTile> outputPictures() {
+		Storage<ItemVariant> output = output();
+		if (output == null) {
+			return List.of();
+		}
+		Map<String, PictureTile> found = new LinkedHashMap<>();
+		for (StorageView<ItemVariant> view : output.nonEmptyViews()) {
+			PictureTile tile = view.getResource().toStack().get(ModComponents.PICTURE);
+			if (tile != null) {
+				found.putIfAbsent(tile.hash(), tile);
+				if (found.size() >= MAX_PENCIL_PICTURES) {
+					break;
+				}
+			}
+		}
+		return List.copyOf(found.values());
+	}
+
+	/** A pencil for the last job. */
 	public ItemStack makePencil() {
-		if (level == null || jobLetters.isEmpty() && pictureJob == null) {
+		return makePencil("");
+	}
+
+	/**
+	 * Makes a pencil from a stick and a smooth stone of the inputs: for the picture with this hash whose
+	 * stones are in the output, or with an empty hash for the last job, a line in the current dyes or a
+	 * picture. A picture pencil lays its stones row by row. Empty when that fails; the status then says why.
+	 */
+	public ItemStack makePencil(String pictureHash) {
+		PictureJob picture = pictureJob;
+		if (!pictureHash.isEmpty()) {
+			picture = outputPictures().stream().filter(tile -> tile.hash().equals(pictureHash)).findFirst().map(PictureJob::of).orElse(null);
+			if (picture == null) {
+				status = TypewriterStatus.PICTURE_GONE;
+				return ItemStack.EMPTY;
+			}
+		}
+		if (level == null || jobLetters.isEmpty() && picture == null) {
 			status = TypewriterStatus.NO_LINE;
 			return ItemStack.EMPTY;
 		}
@@ -497,8 +541,8 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 			}
 			transaction.commit();
 		}
-		if (pictureJob != null) {
-			return ModPencil.picturePencil(GlobalPos.of(level.dimension(), worldPosition), pictureJob);
+		if (picture != null) {
+			return ModPencil.picturePencil(GlobalPos.of(level.dimension(), worldPosition), picture);
 		}
 		Dyes dyes = new Dyes(dyeOf(dyeSamples.getItem(SLOT_LETTER)).orElse(DyeColor.BLACK), dyeOf(dyeSamples.getItem(SLOT_BACKGROUND)));
 		return ModPencil.pencil(GlobalPos.of(level.dimension(), worldPosition), jobLetters, dyes);

@@ -2,9 +2,12 @@ package de.knito.typestones.typewriter;
 
 import io.netty.buffer.ByteBuf;
 
+import java.util.List;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -18,7 +21,10 @@ import net.minecraft.world.item.ItemStack;
 
 import org.jspecify.annotations.Nullable;
 
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+
 import de.knito.typestones.ModTypewriter;
+import de.knito.typestones.picture.PictureTile;
 
 public class TypewriterMenu extends AbstractContainerMenu {
 	/** Sent to the client when the screen opens. */
@@ -42,6 +48,10 @@ public class TypewriterMenu extends AbstractContainerMenu {
 	private final FontSettings initialFont;
 	/** Only set on the server. */
 	private final @Nullable TypewriterBlockEntity typewriter;
+	private final Player player;
+	/** Pictures with stones in the output, by hash: on the server what was sent last, on the client what arrived. */
+	private @Nullable List<String> pencilPictures;
+	private int pencilPicturesDelay;
 
 	/** Client side. */
 	public TypewriterMenu(int containerId, Inventory inventory, OpenData openData) {
@@ -61,6 +71,7 @@ public class TypewriterMenu extends AbstractContainerMenu {
 		this.dyeSamples = dyeSamples;
 		this.data = data;
 		this.typewriter = typewriter;
+		this.player = inventory.player;
 		this.initialText = initialText;
 		this.initialFont = initialFont;
 		addSlot(new SampleSlot(dyeSamples, TypewriterBlockEntity.SLOT_LETTER, LETTER_X, DYES_Y));
@@ -117,6 +128,31 @@ public class TypewriterMenu extends AbstractContainerMenu {
 	/** True while a program (Lua Box, computer) holds the Typewriter: the screen can only watch then. */
 	public boolean claimed() {
 		return data.get(4) != 0;
+	}
+
+	/** The pictures the pencil chooser offers besides the last job. */
+	public List<String> pencilPictures() {
+		return pencilPictures == null ? List.of() : pencilPictures;
+	}
+
+	/** Client side: the server's list arrived. */
+	public void setPencilPictures(List<String> hashes) {
+		pencilPictures = List.copyOf(hashes);
+	}
+
+	/** Twice a second, the player gets the pictures in the output when they changed. */
+	@Override
+	public void broadcastChanges() {
+		super.broadcastChanges();
+		if (typewriter == null || !(player instanceof ServerPlayer serverPlayer) || --pencilPicturesDelay > 0) {
+			return;
+		}
+		pencilPicturesDelay = 10;
+		List<String> hashes = typewriter.outputPictures().stream().map(PictureTile::hash).toList();
+		if (!hashes.equals(pencilPictures)) {
+			pencilPictures = hashes;
+			ServerPlayNetworking.send(serverPlayer, new TypewriterActionPayload.PencilPictures(hashes));
+		}
 	}
 
 	@Override

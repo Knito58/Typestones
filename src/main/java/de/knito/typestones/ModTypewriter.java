@@ -53,6 +53,8 @@ public class ModTypewriter {
 		CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.FUNCTIONAL_BLOCKS).register(tab -> tab.accept(ITEM));
 
 		PayloadTypeRegistry.serverboundPlay().register(TypewriterActionPayload.TYPE, TypewriterActionPayload.STREAM_CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(TypewriterActionPayload.PencilPictures.TYPE,
+				TypewriterActionPayload.PencilPictures.STREAM_CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(TypewriterActionPayload.TYPE, (payload, context) -> {
 			// Only act on the typewriter whose screen this player really has open.
 			if (!(context.player().containerMenu instanceof TypewriterMenu menu)
@@ -72,7 +74,7 @@ public class ModTypewriter {
 				case START -> typewriter.start(payload.letters(), LetterLibrary.get(context.player().level().getServer()));
 				case STOP -> typewriter.stop();
 				case GET_PENCIL -> {
-					ItemStack pencil = typewriter.makePencil();
+					ItemStack pencil = typewriter.makePencil(payload.pencilPicture());
 					if (!pencil.isEmpty() && !context.player().getInventory().add(pencil)) {
 						Block.popResource(context.player().level(), context.player().blockPosition(), pencil);
 					}
