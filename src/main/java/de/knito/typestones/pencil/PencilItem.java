@@ -14,6 +14,7 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.item.component.TooltipDisplay;
 
 import de.knito.typestones.ModComponents;
+import de.knito.typestones.block.TypestoneItem;
 import de.knito.typestones.letter.Letters;
 
 /**
@@ -51,6 +52,7 @@ public class PencilItem extends Item {
 		if (line.picture().isPresent()) {
 			tooltip.accept(Component.translatable("item.typestones.pencil.picture", line.picture().get().cols(), line.picture().get().rows())
 					.withStyle(ChatFormatting.GRAY));
+			TypestoneItem.pictureLine(line.picture().get().hash(), tooltip);
 			tooltip.accept(Component.translatable("item.typestones.pencil.next", line.next() + 1, line.size()).withStyle(ChatFormatting.DARK_GRAY));
 			return;
 		}
