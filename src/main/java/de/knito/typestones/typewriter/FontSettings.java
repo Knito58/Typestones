@@ -18,8 +18,10 @@ import de.knito.typestones.letter.LetterInfo;
  * @param style    {@link #REGULAR}, {@link #BOLD}, {@link #ITALIC} or both; the same values as java.awt.Font
  * @param joined   the whole line is shaped and cut into stones, so letters that belong together (Arabic,
  *                 punctuation next to a word) stay together; otherwise each character gets its own stone
+ * @param align    for a joined line shorter than width: {@link #LEFT}, {@link #CENTER} or {@link #RIGHT}
+ * @param width    the width of the line in stones that align refers to; 0 for exactly as wide as the line
  */
-public record FontSettings(String font, int size, int scale, int baseline, int style, boolean joined) {
+public record FontSettings(String font, int size, int scale, int baseline, int style, boolean joined, int align, int width) {
 	public static final String CLASSIC = "classic";
 	public static final int[] SIZES = {16, 32, 64};
 	public static final int MIN_SCALE = 25;
@@ -28,9 +30,13 @@ public record FontSettings(String font, int size, int scale, int baseline, int s
 	public static final int REGULAR = 0;
 	public static final int BOLD = 1;
 	public static final int ITALIC = 2;
+	public static final int LEFT = 0;
+	public static final int CENTER = 1;
+	public static final int RIGHT = 2;
+	public static final int MAX_WIDTH = 128;
 	private static final String[] STYLE_NAMES = {"", " Bold", " Italic", " Bold Italic"};
 
-	public static final FontSettings DEFAULT = new FontSettings(CLASSIC, 64, 100, 0, REGULAR, false);
+	public static final FontSettings DEFAULT = new FontSettings(CLASSIC, 64, 100, 0, REGULAR, false, LEFT, 0);
 
 	public static final StreamCodec<ByteBuf, FontSettings> STREAM_CODEC = StreamCodec.composite(
 			ByteBufCodecs.stringUtf8(LetterInfo.MAX_FONT * 4), FontSettings::font,
@@ -39,6 +45,8 @@ public record FontSettings(String font, int size, int scale, int baseline, int s
 			ByteBufCodecs.VAR_INT, FontSettings::baseline,
 			ByteBufCodecs.VAR_INT, FontSettings::style,
 			ByteBufCodecs.BOOL, FontSettings::joined,
+			ByteBufCodecs.VAR_INT, FontSettings::align,
+			ByteBufCodecs.VAR_INT, FontSettings::width,
 			FontSettings::new
 	);
 
@@ -49,6 +57,8 @@ public record FontSettings(String font, int size, int scale, int baseline, int s
 		scale = Math.clamp(scale, MIN_SCALE, MAX_SCALE);
 		baseline = Math.clamp(baseline, -MAX_BASELINE, MAX_BASELINE);
 		style = Math.clamp(style, REGULAR, BOLD | ITALIC);
+		align = Math.clamp(align, LEFT, RIGHT);
+		width = Math.clamp(width, 0, MAX_WIDTH);
 	}
 
 	public boolean isClassic() {
@@ -67,26 +77,40 @@ public record FontSettings(String font, int size, int scale, int baseline, int s
 	}
 
 	public FontSettings withFont(String font) {
-		return new FontSettings(font, size, scale, baseline, style, joined);
+		return new FontSettings(font, size, scale, baseline, style, joined, align, width);
 	}
 
 	public FontSettings withSize(int size) {
-		return new FontSettings(font, size, scale, baseline, style, joined);
+		return new FontSettings(font, size, scale, baseline, style, joined, align, width);
 	}
 
 	public FontSettings withScale(int scale) {
-		return new FontSettings(font, size, scale, baseline, style, joined);
+		return new FontSettings(font, size, scale, baseline, style, joined, align, width);
 	}
 
 	public FontSettings withBaseline(int baseline) {
-		return new FontSettings(font, size, scale, baseline, style, joined);
+		return new FontSettings(font, size, scale, baseline, style, joined, align, width);
 	}
 
 	public FontSettings withStyle(int style) {
-		return new FontSettings(font, size, scale, baseline, style, joined);
+		return new FontSettings(font, size, scale, baseline, style, joined, align, width);
 	}
 
 	public FontSettings withJoined(boolean joined) {
-		return new FontSettings(font, size, scale, baseline, style, joined);
+		return new FontSettings(font, size, scale, baseline, style, joined, align, width);
+	}
+
+	public FontSettings withAlign(int align) {
+		return new FontSettings(font, size, scale, baseline, style, joined, align, width);
+	}
+
+	public FontSettings withWidth(int width) {
+		return new FontSettings(font, size, scale, baseline, style, joined, align, width);
+	}
+
+	/** How many blank stones go before a line of this many stones to put it where align says. */
+	public int padding(int stones) {
+		int extra = Math.max(0, width - stones);
+		return align == LEFT ? 0 : align == CENTER ? extra / 2 : extra;
 	}
 }
