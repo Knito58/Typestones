@@ -5,9 +5,7 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.RenderingHints;
-import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
-import java.awt.font.LineMetrics;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
@@ -85,7 +83,7 @@ public final class LetterBaker {
 
 	/** The letter of one character, or null when the glyph has no ink (a space) or the font is missing. */
 	public static @Nullable Letter bake(FontSettings settings, int codePoint) {
-		Key key = new Key(settings, codePoint);
+		Key key = new Key(settings.withJoined(false), codePoint);
 		Optional<Letter> cached = CACHE.get(key);
 		if (cached == null) {
 			if (CACHE.size() >= MAX_CACHED) {
@@ -97,6 +95,20 @@ public final class LetterBaker {
 		return cached.orElse(null);
 	}
 
+	/**
+	 * The whole line shaped as one and cut into cells, one per stone; empty when the font is missing.
+	 * Lines are only baked when Start is pressed, so they aren't cached.
+	 */
+	public static List<LineBaker.Cell> bakeLine(FontSettings settings, String text) {
+		Font base = font(settings.font(), settings.style());
+		return base == null ? List.of() : LineBaker.bakeLine(base, settings.size(), settings.scale(), settings.baseline(), text);
+	}
+
+	/** True when the text is in a script whose letters change with their neighbours, like Arabic. */
+	public static boolean needsShaping(String text) {
+		return LineBaker.needsShaping(text);
+	}
+
 	/** Where the baseline lies, in letter pixels from the top; for the ruler in the Typewriter screen. */
 	public static double baseline(FontSettings settings) {
 		Font font = font(settings.font(), settings.style());
@@ -105,13 +117,7 @@ public final class LetterBaker {
 
 	/** {font size, baseline y} on the supersampled canvas. */
 	private static double[] layout(Font font, FontSettings settings) {
-		LineMetrics metrics = font.getLineMetrics("Hg", new FontRenderContext(null, true, true));
-		double ascent = metrics.getAscent();
-		double descent = metrics.getDescent();
-		double cell = settings.size() * SUPERSAMPLE;
-		double factor = cell / (ascent + descent) * settings.scale() / 100.0;
-		double baseline = cell / 2 + (ascent - descent) / 2 * factor - cell * settings.baseline() / 100.0;
-		return new double[] {REFERENCE * factor, baseline};
+		return LineBaker.layout(font, settings.size(), settings.scale(), settings.baseline());
 	}
 
 	private static @Nullable Letter draw(FontSettings settings, int codePoint) {
@@ -136,23 +142,6 @@ public final class LetterBaker {
 
 	/** A pixel gets ink when at least half of its supersampled area is covered; null without any ink. */
 	private static @Nullable Letter reduce(Raster raster, int size) {
-		boolean[] ink = new boolean[size * size];
-		boolean any = false;
-		int[] samples = new int[SUPERSAMPLE * SUPERSAMPLE];
-		int half = SUPERSAMPLE * SUPERSAMPLE * 255 / 2;
-		for (int y = 0; y < size; y++) {
-			for (int x = 0; x < size; x++) {
-				raster.getSamples(x * SUPERSAMPLE, y * SUPERSAMPLE, SUPERSAMPLE, SUPERSAMPLE, 0, samples);
-				int coverage = 0;
-				for (int sample : samples) {
-					coverage += sample;
-				}
-				if (coverage >= half) {
-					ink[y * size + x] = true;
-					any = true;
-				}
-			}
-		}
-		return any ? Letter.of(size, ink) : null;
+		return LineBaker.reduce(raster, 0, size);
 	}
 }

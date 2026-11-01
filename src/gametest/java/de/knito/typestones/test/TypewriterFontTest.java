@@ -25,7 +25,7 @@ import de.knito.typestones.typewriter.TypewriterStatus;
 
 /** The Typewriter with fonts: texts, settings and starting a job from letters in the library. */
 public class TypewriterFontTest {
-	private static final FontSettings TEST_FONT = new FontSettings("Test Font", 32, 100, 0, FontSettings.BOLD);
+	private static final FontSettings TEST_FONT = new FontSettings("Test Font", 32, 100, 0, FontSettings.BOLD, false);
 
 	private static TypewriterBlockEntity typewriter() {
 		TypewriterBlockEntity typewriter = new TypewriterBlockEntity(BlockPos.ZERO, ModTypewriter.BLOCK.defaultBlockState());
@@ -53,7 +53,7 @@ public class TypewriterFontTest {
 
 	@GameTest
 	public void settingsStayInRange(GameTestHelper helper) {
-		FontSettings wild = new FontSettings("", 50, 1000, -99, 7);
+		FontSettings wild = new FontSettings("", 50, 1000, -99, 7, false);
 		helper.assertTrue(wild.isClassic() && wild.size() == 64 && wild.scale() == FontSettings.MAX_SCALE
 				&& wild.baseline() == -FontSettings.MAX_BASELINE && wild.style() == (FontSettings.BOLD | FontSettings.ITALIC),
 				"Settings out of range: " + wild);
@@ -64,6 +64,14 @@ public class TypewriterFontTest {
 		ByteBuf buf = Unpooled.buffer();
 		TypewriterActionPayload.STREAM_CODEC.encode(buf, sent);
 		helper.assertTrue(sent.equals(TypewriterActionPayload.STREAM_CODEC.decode(buf)), "The button packet changed on the way");
+
+		TypewriterActionPayload joined = new TypewriterActionPayload(TypewriterActionPayload.Action.START, "ab", 1, TEST_FONT.withJoined(true),
+				List.of("a"), "cafe");
+		ByteBuf joinedBuf = Unpooled.buffer();
+		TypewriterActionPayload.STREAM_CODEC.encode(joinedBuf, joined);
+		TypewriterActionPayload back = TypewriterActionPayload.STREAM_CODEC.decode(joinedBuf);
+		helper.assertTrue(back.equals(joined) && back.font().joined(), "The joined switch got lost on the way");
+		helper.assertTrue(!FontSettings.DEFAULT.withJoined(true).isJoined(), "The classic face can't be joined");
 		helper.succeed();
 	}
 
@@ -97,6 +105,32 @@ public class TypewriterFontTest {
 		helper.assertTrue(typewriter.status() == TypewriterStatus.RUNNING, "Didn't start: " + typewriter.status());
 		helper.assertTrue(typewriter.jobLetters().equals(List.of(zhong.hash(), Letters.NONE, wen.hash())),
 				"Job letters: " + typewriter.jobLetters());
+		helper.succeed();
+	}
+
+	@GameTest
+	public void joinedLineHasFewerCellsThanCharacters(GameTestHelper helper) {
+		LetterLibrary library = new LetterLibrary();
+		LibraryLetter first = dot(1, "ab…");
+		LibraryLetter second = dot(2, "…bc");
+		library.add(first);
+		library.add(second);
+		String text = "abc";
+		TypewriterBlockEntity typewriter = typewriter();
+
+		typewriter.applySettings(text, 1, TEST_FONT);
+		typewriter.start(List.of(first.hash(), second.hash()), library);
+		helper.assertTrue(typewriter.status() == TypewriterStatus.MISSING_LETTERS, "A spaced line started with cells");
+
+		typewriter.applySettings(text, 1, TEST_FONT.withJoined(true));
+		typewriter.start(List.of(first.hash(), second.hash()), library);
+		helper.assertTrue(typewriter.status() == TypewriterStatus.RUNNING, "A joined line didn't start: " + typewriter.status());
+		helper.assertTrue(typewriter.total() == 2, "Stones of the joined line: " + typewriter.total());
+
+		typewriter.start(List.of(first.hash(), "unknown"), library);
+		helper.assertTrue(typewriter.status() == TypewriterStatus.MISSING_LETTERS, "A cell not in the library started");
+		typewriter.start(List.of(), library);
+		helper.assertTrue(typewriter.status() == TypewriterStatus.MISSING_LETTERS, "A joined line without cells started");
 		helper.succeed();
 	}
 }

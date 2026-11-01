@@ -16,8 +16,10 @@ import de.knito.typestones.letter.LetterInfo;
  * @param scale    font size in percent; at 100 the font's ascent and descent fill the cell height
  * @param baseline moves the letters up (positive) or down, in percent of the cell height
  * @param style    {@link #REGULAR}, {@link #BOLD}, {@link #ITALIC} or both; the same values as java.awt.Font
+ * @param joined   the whole line is shaped and cut into stones, so letters that belong together (Arabic,
+ *                 punctuation next to a word) stay together; otherwise each character gets its own stone
  */
-public record FontSettings(String font, int size, int scale, int baseline, int style) {
+public record FontSettings(String font, int size, int scale, int baseline, int style, boolean joined) {
 	public static final String CLASSIC = "classic";
 	public static final int[] SIZES = {16, 32, 64};
 	public static final int MIN_SCALE = 25;
@@ -28,7 +30,7 @@ public record FontSettings(String font, int size, int scale, int baseline, int s
 	public static final int ITALIC = 2;
 	private static final String[] STYLE_NAMES = {"", " Bold", " Italic", " Bold Italic"};
 
-	public static final FontSettings DEFAULT = new FontSettings(CLASSIC, 64, 100, 0, REGULAR);
+	public static final FontSettings DEFAULT = new FontSettings(CLASSIC, 64, 100, 0, REGULAR, false);
 
 	public static final StreamCodec<ByteBuf, FontSettings> STREAM_CODEC = StreamCodec.composite(
 			ByteBufCodecs.stringUtf8(LetterInfo.MAX_FONT * 4), FontSettings::font,
@@ -36,6 +38,7 @@ public record FontSettings(String font, int size, int scale, int baseline, int s
 			ByteBufCodecs.VAR_INT, FontSettings::scale,
 			ByteBufCodecs.VAR_INT, FontSettings::baseline,
 			ByteBufCodecs.VAR_INT, FontSettings::style,
+			ByteBufCodecs.BOOL, FontSettings::joined,
 			FontSettings::new
 	);
 
@@ -52,6 +55,11 @@ public record FontSettings(String font, int size, int scale, int baseline, int s
 		return font.equals(CLASSIC);
 	}
 
+	/** Joined lines need a real font; the classic face always sets one stone per character. */
+	public boolean isJoined() {
+		return joined && !isClassic();
+	}
+
 	/** The font as the letter library names it, e.g. "Ubuntu Sans Bold". */
 	public String fontName() {
 		String name = font + STYLE_NAMES[style];
@@ -59,22 +67,26 @@ public record FontSettings(String font, int size, int scale, int baseline, int s
 	}
 
 	public FontSettings withFont(String font) {
-		return new FontSettings(font, size, scale, baseline, style);
+		return new FontSettings(font, size, scale, baseline, style, joined);
 	}
 
 	public FontSettings withSize(int size) {
-		return new FontSettings(font, size, scale, baseline, style);
+		return new FontSettings(font, size, scale, baseline, style, joined);
 	}
 
 	public FontSettings withScale(int scale) {
-		return new FontSettings(font, size, scale, baseline, style);
+		return new FontSettings(font, size, scale, baseline, style, joined);
 	}
 
 	public FontSettings withBaseline(int baseline) {
-		return new FontSettings(font, size, scale, baseline, style);
+		return new FontSettings(font, size, scale, baseline, style, joined);
 	}
 
 	public FontSettings withStyle(int style) {
-		return new FontSettings(font, size, scale, baseline, style);
+		return new FontSettings(font, size, scale, baseline, style, joined);
+	}
+
+	public FontSettings withJoined(boolean joined) {
+		return new FontSettings(font, size, scale, baseline, style, joined);
 	}
 }
