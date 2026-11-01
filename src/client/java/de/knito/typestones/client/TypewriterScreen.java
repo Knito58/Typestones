@@ -274,8 +274,12 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		return all;
 	}
 
+	/**
+	 * The arrows walk the whole list in order, from the current font on. The filter only picks where to
+	 * start (see {@link #filterChanged}); walking inside the matches would circle between a few fonts.
+	 */
 	private void changeFont(int delta) {
-		List<String> choices = fontChoices();
+		List<String> choices = allFonts();
 		if (choices.isEmpty()) {
 			return;
 		}
