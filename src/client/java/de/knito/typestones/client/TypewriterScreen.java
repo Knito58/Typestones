@@ -1,6 +1,7 @@
 package de.knito.typestones.client;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -49,11 +50,11 @@ import de.knito.typestones.typewriter.TypewriterStatus;
  */
 public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 	private static final Identifier BACKGROUND = Typestones.id("textures/gui/typewriter.png");
-	private static final int STATUS_Y = 110;
+	private static final int STATUS_Y = 130;
 	private static final int PANEL_GAP = 2;
 	private static final int PANEL_WIDTH = 120;
 	private static final int PREVIEW = 64;
-	private static final int PREVIEW_Y = 122;
+	private static final int PREVIEW_Y = 142;
 	private static final int MESSAGE_GAP = 3;
 	private static final int MESSAGE_HEIGHT = 12;
 	private static final SystemToast.SystemToastId BAKED_TOAST = new SystemToast.SystemToastId();
@@ -62,6 +63,9 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 	private EditBox textBox;
 	private EditBox filterBox;
 	private Button sizeButton;
+	private Button alignButton;
+	private Button closeButton;
+	private final List<Button> joinedOnly = new ArrayList<>();
 	private Button styleButton;
 	private final List<Button> fontButtons = new ArrayList<>();
 	/** -1 until the player changes it: then the screen shows what the typewriter has stored. */
@@ -83,7 +87,7 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 	private int ticks;
 
 	public TypewriterScreen(TypewriterMenu menu, Inventory inventory, Component title) {
-		super(menu, inventory, title, 176, 212);
+		super(menu, inventory, title, 176, 232);
 		this.inventoryLabelY = TypewriterMenu.INVENTORY_Y - 11;
 		this.settings = menu.initialFont();
 	}
@@ -123,19 +127,28 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 				.bounds(leftPos + 154, topPos + 73, 14, 9).build());
 		updatePencilButton();
 
-		addRenderableWidget(Button.builder(Component.translatable("gui.typestones.start"), b -> send(TypewriterActionPayload.Action.START))
-				.bounds(leftPos + 8, topPos + 88, 49, 18).build());
-		addRenderableWidget(Button.builder(Component.translatable("gui.typestones.stop"), b -> send(TypewriterActionPayload.Action.STOP))
-				.bounds(leftPos + 60, topPos + 88, 49, 18).build());
 		addRenderableWidget(Button.builder(Component.literal("-"), b -> changeRepeat(-1))
-				.bounds(leftPos + 111, topPos + 88, 14, 18).build());
+				.bounds(leftPos + 8, topPos + 88, 14, 18).build());
 		addRenderableWidget(Button.builder(Component.literal("+"), b -> changeRepeat(1))
-				.bounds(leftPos + 152, topPos + 88, 16, 18).build());
+				.bounds(leftPos + 48, topPos + 88, 16, 18).build());
+		sizeButton = Button.builder(sizeLabel(), b -> changeSize())
+				.bounds(leftPos + 68, topPos + 88, 34, 18).build();
+		styleButton = Button.builder(styleLabel(), b -> changeStyle())
+				.bounds(leftPos + 104, topPos + 88, 64, 18).build();
+		fontButtons.clear();
+		fontButtons.add(sizeButton);
+		fontButtons.add(styleButton);
+		addRenderableWidget(Button.builder(Component.translatable("gui.typestones.start"), b -> send(TypewriterActionPayload.Action.START))
+				.bounds(leftPos + 8, topPos + 108, 78, 18).build());
+		addRenderableWidget(Button.builder(Component.translatable("gui.typestones.stop"), b -> send(TypewriterActionPayload.Action.STOP))
+				.bounds(leftPos + 90, topPos + 108, 78, 18).build());
+		closeButton = addRenderableWidget(new CloseButton(leftPos + imageWidth - 15, topPos + 3));
 
 		int px = panelX();
 		filterBox = new EditBox(font, px + 6, topPos + 18, PANEL_WIDTH - 12, 16, Component.translatable("gui.typestones.font_filter"));
 		filterBox.setHint(Component.translatable("gui.typestones.font_filter"));
 		filterBox.setValue(oldFilter);
+		filterBox.setResponder(this::filterChanged);
 		addRenderableWidget(filterBox);
 		addRenderableWidget(Button.builder(Component.translatable("gui.typestones.font_classic_button"), b -> setFont(FontSettings.CLASSIC))
 				.bounds(px + PANEL_WIDTH - 56, topPos + 2, 50, 14).build());
@@ -144,21 +157,26 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		addRenderableWidget(Button.builder(Component.literal(">"), b -> changeFont(1))
 				.bounds(px + PANEL_WIDTH - 22, topPos + 38, 16, 18).build());
 
-		fontButtons.clear();
 		joinedButton = Button.builder(joinedLabel(), b -> toggleJoined())
-				.bounds(px + 6, topPos + 2, 56, 14).build();
+				.bounds(px + 6, topPos + 60, 56, 18).build();
 		joinedButton.setTooltip(Tooltip.create(Component.translatable("gui.typestones.joined.tooltip")));
 		fontButtons.add(joinedButton);
-		sizeButton = Button.builder(sizeLabel(), b -> changeSize())
-				.bounds(px + 6, topPos + 60, 40, 18).build();
-		fontButtons.add(sizeButton);
-		styleButton = Button.builder(styleLabel(), b -> changeStyle())
-				.bounds(px + 50, topPos + 60, PANEL_WIDTH - 56, 18).build();
-		fontButtons.add(styleButton);
-		fontButtons.add(Button.builder(Component.literal("-"), b -> changeScale(-1)).bounds(px + 6, topPos + 80, 16, 18).build());
-		fontButtons.add(Button.builder(Component.literal("+"), b -> changeScale(1)).bounds(px + PANEL_WIDTH - 22, topPos + 80, 16, 18).build());
-		fontButtons.add(Button.builder(Component.literal("-"), b -> changeBaseline(-1)).bounds(px + 6, topPos + 100, 16, 18).build());
-		fontButtons.add(Button.builder(Component.literal("+"), b -> changeBaseline(1)).bounds(px + PANEL_WIDTH - 22, topPos + 100, 16, 18).build());
+		alignButton = Button.builder(alignLabel(), b -> changeAlign())
+				.bounds(px + PANEL_WIDTH - 56, topPos + 60, 50, 18).build();
+		alignButton.setTooltip(Tooltip.create(Component.translatable("gui.typestones.align.tooltip")));
+		fontButtons.add(alignButton);
+		Button widthDown = Button.builder(Component.literal("-"), b -> changeWidth(-1)).bounds(px + 6, topPos + 80, 16, 18).build();
+		Button widthUp = Button.builder(Component.literal("+"), b -> changeWidth(1)).bounds(px + PANEL_WIDTH - 22, topPos + 80, 16, 18).build();
+		widthDown.setTooltip(Tooltip.create(Component.translatable("gui.typestones.width.tooltip")));
+		widthUp.setTooltip(Tooltip.create(Component.translatable("gui.typestones.width.tooltip")));
+		fontButtons.add(widthDown);
+		fontButtons.add(widthUp);
+		joinedOnly.clear();
+		joinedOnly.addAll(List.of(alignButton, widthDown, widthUp));
+		fontButtons.add(Button.builder(Component.literal("-"), b -> changeScale(-1)).bounds(px + 6, topPos + 100, 16, 18).build());
+		fontButtons.add(Button.builder(Component.literal("+"), b -> changeScale(1)).bounds(px + PANEL_WIDTH - 22, topPos + 100, 16, 18).build());
+		fontButtons.add(Button.builder(Component.literal("-"), b -> changeBaseline(-1)).bounds(px + 6, topPos + 120, 16, 18).build());
+		fontButtons.add(Button.builder(Component.literal("+"), b -> changeBaseline(1)).bounds(px + PANEL_WIDTH - 22, topPos + 120, 16, 18).build());
 		fontButtons.forEach(this::addRenderableWidget);
 		addRenderableWidget(Button.builder(Component.literal("<"), b -> previewIndex--)
 				.bounds(px + 6, topPos + PREVIEW_Y + PREVIEW / 2 - 9, 16, 18).build());
@@ -169,16 +187,49 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 
 	/** Size, scale and baseline mean nothing for the built-in classic face. */
 	private void updateFontButtons() {
-		fontButtons.forEach(b -> b.active = !settings.isClassic());
+		fontButtons.forEach(b -> b.active = !settings.isClassic() && (settings.isJoined() || !joinedOnly.contains(b)));
 		sizeButton.setMessage(sizeLabel());
 		styleButton.setMessage(styleLabel());
 		if (joinedButton != null) {
 			joinedButton.setMessage(joinedLabel());
+			alignButton.setMessage(alignLabel());
 		}
 	}
 
 	private Component joinedLabel() {
 		return Component.translatable(settings.joined() ? "gui.typestones.joined" : "gui.typestones.spaced");
+	}
+
+	private Component alignLabel() {
+		return Component.translatable("gui.typestones.align." + settings.align());
+	}
+
+	private void changeAlign() {
+		settings = settings.withAlign((settings.align() + 1) % 3);
+		updateFontButtons();
+		send(TypewriterActionPayload.Action.SAVE);
+	}
+
+	private void changeWidth(int delta) {
+		settings = settings.withWidth(settings.width() + delta * step());
+		send(TypewriterActionPayload.Action.SAVE);
+	}
+
+	/** The first font matching what was typed becomes the chosen one, so the preview follows every character. */
+	private void filterChanged(String filter) {
+		if (filter.isBlank()) {
+			return;
+		}
+		List<String> choices = fontChoices();
+		if (choices.isEmpty() || choices.contains(settings.font()) && !settings.isClassic()) {
+			return;
+		}
+		String lower = filter.toLowerCase(Locale.ROOT);
+		String pick = choices.stream().filter(f -> !f.equals(FontSettings.CLASSIC) && f.toLowerCase(Locale.ROOT).startsWith(lower)).findFirst()
+				.orElseGet(() -> choices.stream().filter(f -> !f.equals(FontSettings.CLASSIC)).findFirst().orElse(choices.get(0)));
+		if (!pick.equals(settings.font())) {
+			setFont(pick);
+		}
 	}
 
 	/** Joined: the line is shaped as a whole and cut into stones. Spaced: one stone per character. */
@@ -307,11 +358,14 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 				}
 				if (settings.isJoined()) {
 					List<LineBaker.Cell> cells = LetterBaker.bakeLine(settings, text);
-					if (cells.size() > TypewriterBlockEntity.MAX_TEXT_LENGTH) {
-						toast(Component.translatable("gui.typestones.toast.too_long", cells.size(), TypewriterBlockEntity.MAX_TEXT_LENGTH));
+					int padding = settings.padding(cells.size());
+					if (cells.size() + padding > TypewriterBlockEntity.MAX_TEXT_LENGTH) {
+						toast(Component.translatable("gui.typestones.toast.too_long", cells.size() + padding, TypewriterBlockEntity.MAX_TEXT_LENGTH));
 						action = TypewriterActionPayload.Action.SAVE;
 					} else {
-						letters = uploadCells(cells);
+						// Blank stones in front put the line where the alignment says, within the width.
+						letters = new ArrayList<>(Collections.nCopies(padding, Letters.NONE));
+						letters.addAll(uploadCells(cells));
 					}
 				} else {
 					letters = bakeAndUpload(text);
@@ -453,9 +507,11 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		graphics.fill(px + 1, py + 1, px + PANEL_WIDTH - 1, py + imageHeight - 1, 0xFFC6C6C6);
 
 		graphics.centeredText(font, shortFontName(), px + PANEL_WIDTH / 2, py + 43, 0xFFFFFFFF);
-		graphics.centeredText(font, Component.translatable("gui.typestones.scale", settings.scale()), px + PANEL_WIDTH / 2, py + 85, 0xFFFFFFFF);
+		graphics.centeredText(font, Component.translatable("gui.typestones.scale", settings.scale()), px + PANEL_WIDTH / 2, py + 105, 0xFFFFFFFF);
+		graphics.centeredText(font, Component.translatable(settings.width() == 0 ? "gui.typestones.width_auto" : "gui.typestones.width", settings.width()),
+				px + PANEL_WIDTH / 2, py + 85, settings.isJoined() ? 0xFFFFFFFF : 0xFFA0A0A0);
 		String baseline = (settings.baseline() > 0 ? "+" : "") + settings.baseline();
-		graphics.centeredText(font, Component.translatable("gui.typestones.baseline", baseline), px + PANEL_WIDTH / 2, py + 105, 0xFFFFFFFF);
+		graphics.centeredText(font, Component.translatable("gui.typestones.baseline", baseline), px + PANEL_WIDTH / 2, py + 125, 0xFFFFFFFF);
 
 		// The preview: the letter on stone gray, its cell framed, the baseline in red.
 		int bx = px + (PANEL_WIDTH - PREVIEW) / 2;
@@ -561,6 +617,25 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		}
 	}
 
+	/** The close button: a white cross drawn from pixels on a red tile, not a letter. */
+	private final class CloseButton extends Button {
+		CloseButton(int x, int y) {
+			super(x, y, 11, 11, Component.translatable("gui.typestones.close"), b -> onClose(), DEFAULT_NARRATION);
+		}
+
+		@Override
+		protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+			int x = getX();
+			int y = getY();
+			graphics.fill(x, y, x + 11, y + 11, isHoveredOrFocused() ? 0xFFD05050 : 0xFF9A3C3C);
+			frame(graphics, x, y, 11, 11, 0xFF000000);
+			for (int i = 0; i < 7; i++) {
+				graphics.fill(x + 2 + i, y + 2 + i, x + 3 + i, y + 3 + i, 0xFFFFFFFF);
+				graphics.fill(x + 8 - i, y + 2 + i, x + 9 - i, y + 3 + i, 0xFFFFFFFF);
+			}
+		}
+	}
+
 	/** The text cut to the width, with "…" when something is left out. */
 	private String cut(String text, int width) {
 		return font.width(text) <= width ? text : font.plainSubstrByWidth(text, width - font.width("…")) + "…";
@@ -638,7 +713,8 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		for (var child : children()) {
 			if (child instanceof net.minecraft.client.gui.components.AbstractWidget widget) {
 				// Size, scale and baseline stay off for the classic face, see updateFontButtons.
-				widget.active = free && !(settings.isClassic() && fontButtons.contains(widget));
+				widget.active = widget == closeButton || free && !(settings.isClassic() && fontButtons.contains(widget))
+						&& !(widget instanceof Button button && joinedOnly.contains(button) && !settings.isJoined());
 			}
 		}
 		if (menu.pencilChoices().isEmpty()) {
@@ -649,7 +725,7 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 	@Override
 	protected void extractLabels(GuiGraphicsExtractor graphics, int xm, int ym) {
 		super.extractLabels(graphics, xm, ym);
-		graphics.centeredText(font, Component.translatable("gui.typestones.repeat", currentRepeat()), 139, 93, 0xFFFFFFFF);
+		graphics.centeredText(font, Component.translatable("gui.typestones.repeat", currentRepeat()), 35, 93, 0xFFFFFFFF);
 		List<TypewriterActionPayload.PencilChoice> choices = menu.pencilChoices();
 		if (ticks < pencilNoteUntil && !choices.isEmpty()) {
 			int index = pencilIndex();

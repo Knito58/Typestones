@@ -27,6 +27,9 @@ First version for Minecraft 26.3 (Fabric). Needed on client and server.
   and cuts it into stones, so Arabic and other connected scripts join across stones, punctuation
   stays at its word and a line needs fewer stones. Each stone's name lists the characters it touches,
   with "…" where one goes on in the neighbour. Scripts that need it switch it on at Start.
+  Align (Left, Center, Right) and Width put a shorter joined line within a wider one with blank stones.
+- Screen: size and style next to the repeat counter, a drawn close button, typing in the font filter
+  picks the first matching font at once.
 - Letters are drawn as flat rectangles in the letter dye, not as textures. Letters baked by players
   are kept in the world's letter library (up to 32,768) and sent to other players when they see them.
 

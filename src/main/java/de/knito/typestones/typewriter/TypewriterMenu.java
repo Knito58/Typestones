@@ -39,7 +39,7 @@ public class TypewriterMenu extends AbstractContainerMenu {
 	public static final int LETTER_X = 8;
 	public static final int BACKGROUND_X = 30;
 	public static final int DYES_Y = 66;
-	public static final int INVENTORY_Y = 130;
+	public static final int INVENTORY_Y = 150;
 
 	private final Container dyeSamples;
 	private final ContainerData data;
