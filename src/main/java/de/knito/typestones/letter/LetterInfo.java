@@ -49,7 +49,7 @@ public record LetterInfo(String text, String font, String locale, String baker, 
 	/** E.g. "LATIN CAPITAL LETTER A"; names joined by " + " when the text has several characters. */
 	public String unicodeName() {
 		StringBuilder name = new StringBuilder();
-		text.codePoints().forEach(c -> {
+		shown().codePoints().forEach(c -> {
 			if (!name.isEmpty()) {
 				name.append(" + ");
 			}
@@ -72,7 +72,14 @@ public record LetterInfo(String text, String font, String locale, String baker, 
 
 	/** E.g. "LATIN" or "HAN", from the first character; "UNKNOWN" for an empty text. */
 	public String script() {
-		return text.isEmpty() ? "UNKNOWN" : Character.UnicodeScript.of(text.codePointAt(0)).name();
+		String shown = shown();
+		return shown.isEmpty() ? "UNKNOWN" : Character.UnicodeScript.of(shown.codePointAt(0)).name();
+	}
+
+	/** The text without the "…" that joined lines put where a character goes on in the next stone, unless that is all there is. */
+	private String shown() {
+		String plain = text.replace("…", "");
+		return plain.isEmpty() ? text : plain;
 	}
 
 	/** True when the text could be a typed character: not empty, not too long, no control characters. */

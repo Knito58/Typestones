@@ -7,7 +7,8 @@ Typewriter makes them from a typed line of text, or from an image a program send
 - **Typestones**: any character of any font installed on the player's computer, at 16, 32 or 64 px,
   or the built-in classic face. Top and bottom follow the placement direction, so text reads right
   on walls, floors and ceilings. A broken stone drops itself with letter and colors. No recipes per
-  letter, so recipe viewers stay clean.
+  letter, so recipe viewers stay clean. Joined text sets a whole line at once and cuts it into
+  stones, which makes Arabic and other connected scripts possible.
 - **Typewriter**: takes smooth stone and dyes from inventories on any side, makes one stone every
   5 ticks and puts it into the inventory at its back. Ghost slots for letter and background dye,
   buttons for A–Z, 0–9 and every character, repeat up to 64 times.

@@ -29,6 +29,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import de.knito.typestones.ModPencil;
 import de.knito.typestones.Typestones;
 import de.knito.typestones.client.bake.LetterBaker;
+import de.knito.typestones.client.bake.LineBaker;
 import de.knito.typestones.client.network.LetterSync;
 import de.knito.typestones.glyph.GlyphSet;
 import de.knito.typestones.letter.Letter;
@@ -68,6 +69,12 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 	private FontSettings settings;
 	/** Which character of the text the preview shows. */
 	private int previewIndex;
+	private @Nullable Button joinedButton;
+	/** The cut line the preview shows in joined mode, baked again only when the settings or the text change. */
+	private @Nullable PreviewLine previewLine;
+
+	private record PreviewLine(FontSettings settings, String text, List<LineBaker.Cell> cells) {
+	}
 	/** The pencil choice shown, by hash; empty for the first choice, the last job. */
 	private String pencilHash = "";
 	private PencilButton pencilButton;
@@ -138,6 +145,10 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 				.bounds(px + PANEL_WIDTH - 22, topPos + 38, 16, 18).build());
 
 		fontButtons.clear();
+		joinedButton = Button.builder(joinedLabel(), b -> toggleJoined())
+				.bounds(px + 6, topPos + 2, 56, 14).build();
+		joinedButton.setTooltip(Tooltip.create(Component.translatable("gui.typestones.joined.tooltip")));
+		fontButtons.add(joinedButton);
 		sizeButton = Button.builder(sizeLabel(), b -> changeSize())
 				.bounds(px + 6, topPos + 60, 40, 18).build();
 		fontButtons.add(sizeButton);
@@ -161,6 +172,21 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		fontButtons.forEach(b -> b.active = !settings.isClassic());
 		sizeButton.setMessage(sizeLabel());
 		styleButton.setMessage(styleLabel());
+		if (joinedButton != null) {
+			joinedButton.setMessage(joinedLabel());
+		}
+	}
+
+	private Component joinedLabel() {
+		return Component.translatable(settings.joined() ? "gui.typestones.joined" : "gui.typestones.spaced");
+	}
+
+	/** Joined: the line is shaped as a whole and cut into stones. Spaced: one stone per character. */
+	private void toggleJoined() {
+		settings = settings.withJoined(!settings.joined());
+		previewIndex = 0;
+		updateFontButtons();
+		send(TypewriterActionPayload.Action.SAVE);
 	}
 
 	private Component styleLabel() {
@@ -273,7 +299,23 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 				// Another player's font: this game can't bake it. Keep the settings, start nothing.
 				action = TypewriterActionPayload.Action.SAVE;
 			} else {
-				letters = bakeAndUpload(text);
+				if (!settings.joined() && LetterBaker.needsShaping(text)) {
+					// Arabic and the like can't be set one stone per character.
+					settings = settings.withJoined(true);
+					updateFontButtons();
+					toast(Component.translatable("gui.typestones.toast.auto_joined"));
+				}
+				if (settings.isJoined()) {
+					List<LineBaker.Cell> cells = LetterBaker.bakeLine(settings, text);
+					if (cells.size() > TypewriterBlockEntity.MAX_TEXT_LENGTH) {
+						toast(Component.translatable("gui.typestones.toast.too_long", cells.size(), TypewriterBlockEntity.MAX_TEXT_LENGTH));
+						action = TypewriterActionPayload.Action.SAVE;
+					} else {
+						letters = uploadCells(cells);
+					}
+				} else {
+					letters = bakeAndUpload(text);
+				}
 			}
 		}
 		ClientPlayNetworking.send(new TypewriterActionPayload(action, text, currentRepeat(), settings, letters, pencilHash));
@@ -316,6 +358,47 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 					Component.translatable("gui.typestones.toast.baked", fresh[0], settings.fontName(), settings.size()));
 		}
 		return hashes;
+	}
+
+	private void toast(Component message) {
+		SystemToast.addOrUpdate(Minecraft.getInstance().gui.toastManager(), BAKED_TOAST, Component.translatable("block.typestones.typewriter"), message);
+	}
+
+	/** The hash of each cell of a joined line, a blank stone for an empty cell; new letters go to the server once. */
+	private List<String> uploadCells(List<LineBaker.Cell> cells) {
+		String locale = Minecraft.getInstance().getLanguageManager().getSelected();
+		List<String> hashes = new ArrayList<>();
+		Map<String, LibraryLetter> baked = new LinkedHashMap<>();
+		int fresh = 0;
+		for (LineBaker.Cell cell : cells) {
+			Letter letter = cell.letter();
+			if (letter == null) {
+				hashes.add(Letters.NONE);
+				continue;
+			}
+			hashes.add(letter.hash());
+			if (!baked.containsKey(letter.hash()) && !Letters.isKnown(letter.hash())) {
+				fresh++;
+			}
+			baked.putIfAbsent(letter.hash(), new LibraryLetter(letter, new LetterInfo(cell.text(), settings.fontName(), locale, "", "")));
+		}
+		LetterSync.upload(baked.values());
+		if (fresh > 0) {
+			toast(Component.translatable("gui.typestones.toast.baked", fresh, settings.fontName(), settings.size()));
+		}
+		return hashes;
+	}
+
+	/** The cut line for the preview in joined mode; null when it isn't joined or the font can't draw it. */
+	private @Nullable List<LineBaker.Cell> previewCells() {
+		String text = textBox.getValue().strip();
+		if (!settings.isJoined() || text.isEmpty() || !LetterBaker.has(settings.font())) {
+			return null;
+		}
+		if (previewLine == null || !previewLine.settings().equals(settings) || !previewLine.text().equals(text)) {
+			previewLine = new PreviewLine(settings, text, LetterBaker.bakeLine(settings, text));
+		}
+		return previewLine.cells().isEmpty() ? null : previewLine.cells();
 	}
 
 	/** The character the preview shows: one of the text, or of A–Z, a–z, 0–9 while there is no text. */
@@ -368,7 +451,6 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		int py = topPos;
 		frame(graphics, px, py, PANEL_WIDTH, imageHeight, 0xFF555555);
 		graphics.fill(px + 1, py + 1, px + PANEL_WIDTH - 1, py + imageHeight - 1, 0xFFC6C6C6);
-		graphics.text(font, Component.translatable("gui.typestones.font"), px + 6, py + 6, 0xFF404040, false);
 
 		graphics.centeredText(font, shortFontName(), px + PANEL_WIDTH / 2, py + 43, 0xFFFFFFFF);
 		graphics.centeredText(font, Component.translatable("gui.typestones.scale", settings.scale()), px + PANEL_WIDTH / 2, py + 85, 0xFFFFFFFF);
@@ -378,10 +460,12 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		// The preview: the letter on stone gray, its cell framed, the baseline in red.
 		int bx = px + (PANEL_WIDTH - PREVIEW) / 2;
 		int by = py + PREVIEW_Y;
-		int c = previewChar();
+		List<LineBaker.Cell> cells = previewCells();
+		LineBaker.Cell cell = cells == null ? null : cells.get(Math.floorMod(previewIndex, cells.size()));
+		int c = cells == null ? previewChar() : ' ';
 		frame(graphics, bx - 1, by - 1, PREVIEW + 2, PREVIEW + 2, 0xFF000000);
 		graphics.fill(bx, by, bx + PREVIEW, by + PREVIEW, 0xFF8E8E8E);
-		Letter letter = previewLetter(c);
+		Letter letter = cell != null ? cell.letter() : previewLetter(c);
 		if (letter != null) {
 			int pixel = PREVIEW / letter.size();
 			for (Letter.Rect r : letter.rectangles()) {
@@ -392,7 +476,9 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 			int line = by + (int) Math.round(LetterBaker.baseline(settings) * PREVIEW / settings.size());
 			graphics.fill(bx - 4, line, bx + PREVIEW + 4, line + 1, 0xFFE03030);
 		}
-		String label = new String(Character.toChars(c)) + String.format("  U+%04X", c);
+		String label = cell != null
+				? (Math.floorMod(previewIndex, cells.size()) + 1) + "/" + cells.size() + "  " + cell.text()
+				: new String(Character.toChars(c)) + String.format("  U+%04X", c);
 		graphics.centeredText(font, label, px + PANEL_WIDTH / 2, by + PREVIEW + 4, 0xFF404040);
 	}
 
@@ -403,6 +489,10 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		}
 		if (!LetterBaker.has(settings.font())) {
 			return Component.translatable("gui.typestones.font_missing", settings.font());
+		}
+		if (settings.isJoined() && textBox.getValue().length() > 0 && previewCells() != null
+				&& previewCells().size() > TypewriterBlockEntity.MAX_TEXT_LENGTH) {
+			return Component.translatable("gui.typestones.toast.too_long", previewCells().size(), TypewriterBlockEntity.MAX_TEXT_LENGTH);
 		}
 		int c = previewChar();
 		if (!LetterBaker.canDisplay(settings.font(), c)) {

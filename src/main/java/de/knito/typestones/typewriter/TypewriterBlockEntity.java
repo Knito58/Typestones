@@ -360,7 +360,8 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 
 	/**
 	 * Starts the job. With a font other than classic, letters holds the hash of each character's
-	 * letter; every one must be in the library, else nothing starts.
+	 * letter (of each cell of the line when the font is joined); every one must be in the library, else
+	 * nothing starts.
 	 */
 	public void start(List<String> letters, LetterLibrary library) {
 		if (text.isEmpty()) {
@@ -368,7 +369,9 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 			return;
 		}
 		List<String> job = font.isClassic() ? classicLetters(text) : List.copyOf(letters);
-		if (job.size() != text.codePointCount(0, text.length())
+		// A joined line is cut into cells that don't match the characters one to one.
+		boolean count = font.isJoined() ? job.isEmpty() || job.size() > MAX_TEXT_LENGTH : job.size() != text.codePointCount(0, text.length());
+		if (count
 				|| job.stream().anyMatch(hash -> !hash.equals(Letters.NONE) && library.find(hash) == null)) {
 			status = TypewriterStatus.MISSING_LETTERS;
 			return;
@@ -694,7 +697,7 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 	protected void loadAdditional(ValueInput input) {
 		super.loadAdditional(input);
 		font = new FontSettings(input.getStringOr("font", FontSettings.CLASSIC), input.getIntOr("letter_size", FontSettings.DEFAULT.size()),
-				input.getIntOr("scale", 100), input.getIntOr("baseline", 0), input.getIntOr("font_style", FontSettings.REGULAR));
+				input.getIntOr("scale", 100), input.getIntOr("baseline", 0), input.getIntOr("font_style", FontSettings.REGULAR), input.getBooleanOr("joined", false));
 		text = cleanText(input.getStringOr("text", ""), font.isClassic());
 		repeat = Math.clamp(input.getIntOr("repeat", 1), 1, MAX_REPEAT);
 		// Typewriters from before fonts saved the job as classic text.
@@ -721,6 +724,7 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 		output.putInt("scale", font.scale());
 		output.putInt("baseline", font.baseline());
 		output.putInt("font_style", font.style());
+		output.putBoolean("joined", font.joined());
 		output.store("job_letters", LETTERS_CODEC, jobLetters);
 		output.putString("job_text_line", jobText);
 		if (pictureJob != null) {

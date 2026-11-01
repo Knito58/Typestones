@@ -23,6 +23,10 @@ First version for Minecraft 26.3 (Fabric). Needed on client and server.
 - Fonts: the built-in classic face (Billboard Engine's set), or any font installed on the player's
   computer, in any script, at 16, 32 or 64 pixels, regular, bold, italic or bold italic, with scale
   and baseline settings and a preview.
+- Joined text: a switch (Joined / Spaced) in the font panel. Joined sets the whole line as one piece
+  and cuts it into stones, so Arabic and other connected scripts join across stones, punctuation
+  stays at its word and a line needs fewer stones. Each stone's name lists the characters it touches,
+  with "…" where one goes on in the neighbour. Scripts that need it switch it on at Start.
 - Letters are drawn as flat rectangles in the letter dye, not as textures. Letters baked by players
   are kept in the world's letter library (up to 32,768) and sent to other players when they see them.
 
