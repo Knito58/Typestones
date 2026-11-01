@@ -1,7 +1,6 @@
 package de.knito.typestones.client;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -367,14 +366,11 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 				}
 				if (settings.isJoined()) {
 					List<LineBaker.Cell> cells = LetterBaker.bakeLine(settings, text);
-					int padding = settings.padding(cells.size());
-					if (cells.size() + padding > TypewriterBlockEntity.MAX_TEXT_LENGTH) {
-						toast(Component.translatable("gui.typestones.toast.too_long", cells.size() + padding, TypewriterBlockEntity.MAX_TEXT_LENGTH));
+					if (cells.size() > TypewriterBlockEntity.MAX_TEXT_LENGTH) {
+						toast(Component.translatable("gui.typestones.toast.too_long", cells.size(), TypewriterBlockEntity.MAX_TEXT_LENGTH));
 						action = TypewriterActionPayload.Action.SAVE;
 					} else {
-						// Blank stones in front put the line where the alignment says, within the width.
-						letters = new ArrayList<>(Collections.nCopies(padding, Letters.NONE));
-						letters.addAll(uploadCells(cells));
+						letters = uploadCells(cells);
 					}
 				} else {
 					letters = bakeAndUpload(text);
