@@ -18,7 +18,7 @@ import de.knito.typestones.letter.LetterInfo;
  * @param style    {@link #REGULAR}, {@link #BOLD}, {@link #ITALIC} or both; the same values as java.awt.Font
  * @param joined   the whole line is shaped and cut into stones, so letters that belong together (Arabic,
  *                 punctuation next to a word) stay together; otherwise each character gets its own stone
- * @param align    for a joined line shorter than width: {@link #LEFT}, {@link #CENTER} or {@link #RIGHT}
+ * @param align    where a joined line lies within width stones: {@link #LEFT}, {@link #CENTER} or {@link #RIGHT}
  * @param width    the width of the line in stones that align refers to; 0 for exactly as wide as the line
  */
 public record FontSettings(String font, int size, int scale, int baseline, int style, boolean joined, int align, int width) {
@@ -106,11 +106,5 @@ public record FontSettings(String font, int size, int scale, int baseline, int s
 
 	public FontSettings withWidth(int width) {
 		return new FontSettings(font, size, scale, baseline, style, joined, align, width);
-	}
-
-	/** How many blank stones go before a line of this many stones to put it where align says. */
-	public int padding(int stones) {
-		int extra = Math.max(0, width - stones);
-		return align == LEFT ? 0 : align == CENTER ? extra / 2 : extra;
 	}
 }

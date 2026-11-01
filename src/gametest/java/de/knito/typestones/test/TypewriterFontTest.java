@@ -58,9 +58,6 @@ public class TypewriterFontTest {
 				&& wild.baseline() == -FontSettings.MAX_BASELINE && wild.style() == (FontSettings.BOLD | FontSettings.ITALIC),
 				"Settings out of range: " + wild);
 		helper.assertTrue(wild.align() == FontSettings.RIGHT && wild.width() == FontSettings.MAX_WIDTH, "Align or width out of range: " + wild);
-		FontSettings centered = TEST_FONT.withAlign(FontSettings.CENTER).withWidth(10);
-		helper.assertTrue(centered.padding(4) == 3 && centered.withAlign(FontSettings.RIGHT).padding(4) == 6
-				&& centered.withAlign(FontSettings.LEFT).padding(4) == 0 && centered.padding(12) == 0, "Padding is off");
 		helper.assertTrue(TEST_FONT.fontName().equals("Test Font Bold"), "Font name: " + TEST_FONT.fontName());
 
 		TypewriterActionPayload sent = new TypewriterActionPayload(TypewriterActionPayload.Action.START, "中 中", 3, TEST_FONT,

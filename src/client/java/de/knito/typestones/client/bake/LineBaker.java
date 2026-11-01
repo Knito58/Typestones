@@ -99,8 +99,12 @@ public final class LineBaker {
 	 * The stones of the line, left to right as they are placed. The font is at the reference size; size
 	 * is the stone's pixels (16, 32 or 64), scale and baseline are percentages as in the screen. Trailing
 	 * spaces are dropped. Empty for an empty line.
+	 *
+	 * <p>The line is at least width stones wide (0: as wide as it is), and align (0 left, 1 center, 2 right)
+	 * says where it lies within them, down to the pixel. Empty stones in front are kept, empty ones
+	 * after the line are not.
 	 */
-	public static List<Cell> bakeLine(Font base, int size, int scale, int baseline, String text) {
+	public static List<Cell> bakeLine(Font base, int size, int scale, int baseline, String text, int align, int width) {
 		String line = text.stripTrailing();
 		if (line.isEmpty()) {
 			return List.of();
@@ -114,9 +118,10 @@ public final class LineBaker {
 		Rectangle2D ink = shaped.getBounds();
 		double left = Math.max(0, -ink.getMinX());
 		double extent = left + Math.max(shaped.getAdvance(), ink.getMaxX());
-		int cells = Math.max(1, (int) Math.ceil(extent / cell - 1e-9));
+		int cells = Math.max(Math.max(1, width), (int) Math.ceil(extent / cell - 1e-9));
 		boolean leftToRight = shaped.isLeftToRight();
-		double origin = leftToRight ? left : cells * cell - extent + left;
+		double slack = cells * (double) cell - extent;
+		double origin = left + (align == 2 ? slack : align == 1 ? slack / 2 : 0);
 
 		BufferedImage canvas = new BufferedImage(cells * cell, cell, BufferedImage.TYPE_BYTE_GRAY);
 		Graphics2D g = canvas.createGraphics();
@@ -133,9 +138,9 @@ public final class LineBaker {
 			Letter letter = reduce(canvas.getRaster(), i * cell, size);
 			result.add(new Cell(letter, letter == null ? "" : label(clusters, i * (double) cell, (i + 1) * (double) cell, leftToRight)));
 		}
-		// Rounding up can leave an empty stone at the end the line doesn't start from; typed spaces stay.
-		while (result.size() > 1 && result.get(leftToRight ? result.size() - 1 : 0).letter() == null) {
-			result.remove(leftToRight ? result.size() - 1 : 0);
+		// Rounding up or the width can leave empty stones at the end; the pencil needn't lay them.
+		while (result.size() > 1 && result.get(result.size() - 1).letter() == null) {
+			result.remove(result.size() - 1);
 		}
 		return result;
 	}

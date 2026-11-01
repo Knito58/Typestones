@@ -101,7 +101,8 @@ public final class LetterBaker {
 	 */
 	public static List<LineBaker.Cell> bakeLine(FontSettings settings, String text) {
 		Font base = font(settings.font(), settings.style());
-		return base == null ? List.of() : LineBaker.bakeLine(base, settings.size(), settings.scale(), settings.baseline(), text);
+		return base == null ? List.of() : LineBaker.bakeLine(base, settings.size(), settings.scale(), settings.baseline(), text,
+				settings.align(), settings.width());
 	}
 
 	/** True when the text is in a script whose letters change with their neighbours, like Arabic. */
