@@ -20,6 +20,7 @@ import de.knito.billboard.api.LuaCaller;
 import de.knito.billboard.api.LuaClient;
 import de.knito.billboard.api.LuaException;
 import de.knito.billboard.api.LuaMethod;
+import de.knito.billboard.api.LuaMethods;
 
 import de.knito.typestones.ModTypewriter;
 import de.knito.typestones.script.billboard.BillboardSupport;
@@ -72,9 +73,12 @@ public class BillboardSupportTest {
 		}
 		helper.assertTrue(client.type().equals("typestones:typewriter"), "Type: " + client.type());
 		Map<String, LuaMethod> methods = new HashMap<>();
-		client.methods((name, method) -> {
-			methods.put(name, method);
-			return null;
+		client.methods(new LuaMethods() {
+			@Override
+			public LuaMethods add(String name, LuaMethod method) {
+				methods.put(name, method);
+				return this;
+			}
 		});
 		for (String name : List.of("setText", "getText", "go", "stop", "isRunning", "drawImage", "isPainting", "claim", "release",
 				"isClaimed", "getStatus", "getStatusText", "getProgress", "getCost", "setRepeat", "getRepeat")) {

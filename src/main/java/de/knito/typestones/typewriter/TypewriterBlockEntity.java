@@ -1,10 +1,13 @@
 package de.knito.typestones.typewriter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Predicate;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -335,7 +338,7 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 			return new Cost(stones, stones, 0, 0);
 		}
 		List<Storage<ItemVariant>> inputs = inputs(level, worldPosition, getBlockState().getValue(TypewriterBlock.FACING).getOpposite());
-		return new Cost(stones, stones, count(inputs, Items.SMOOTH_STONE), count(inputs, ModPictures.RGB_DYE));
+		return new Cost(stones, stones, count(inputs, Items.SMOOTH_STONE) + count(inputs, ModBlocks.TYPESTONE_ITEM), count(inputs, ModPictures.RGB_DYE));
 	}
 
 	private static long count(List<Storage<ItemVariant>> inputs, Item item) {
@@ -426,9 +429,18 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 		}
 		Dyes dyes = new Dyes(letter.orElse(DyeColor.BLACK), background);
 		TypestoneItem item = ModBlocks.TYPESTONE_ITEM;
+		ItemVariant wanted = ItemVariant.of(item.stack(glyph, dyes, 1));
+		if (reuse(inputs, output, wanted)) {
+			made++;
+			return TypewriterStatus.RUNNING;
+		}
+		Set<ItemVariant> keep = new HashSet<>();
+		for (String later : jobLetters) {
+			keep.add(ItemVariant.of(item.stack(later, dyes, 1)));
+		}
 
 		try (Transaction transaction = Transaction.openOuter()) {
-			if (missing(inputs, Items.SMOOTH_STONE, transaction)) {
+			if (!takeStone(inputs, keep::contains, transaction)) {
 				return TypewriterStatus.NEEDS_STONE;
 			}
 			if (inked && missing(inputs, dyeItem(letter.get()), transaction)) {
@@ -449,8 +461,17 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 	/** The next stone of the picture job: one smooth stone and one RGB dye, all or nothing. */
 	private TypewriterStatus makePictureStone(Storage<ItemVariant> output, List<Storage<ItemVariant>> inputs) {
 		ItemStack stone = ModBlocks.TYPESTONE_ITEM.pictureStack(pictureJob.tile(made));
+		if (reuse(inputs, output, ItemVariant.of(stone))) {
+			made++;
+			return TypewriterStatus.RUNNING;
+		}
+		String hash = pictureJob.hash();
+		Predicate<ItemVariant> keep = variant -> {
+			PictureTile tile = variant.toStack().get(ModComponents.PICTURE);
+			return tile != null && tile.hash().equals(hash);
+		};
 		try (Transaction transaction = Transaction.openOuter()) {
-			if (missing(inputs, Items.SMOOTH_STONE, transaction)) {
+			if (!takeStone(inputs, keep, transaction)) {
 				return TypewriterStatus.NEEDS_STONE;
 			}
 			if (missing(inputs, ModPictures.RGB_DYE, transaction)) {
@@ -562,7 +583,7 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 					status = TypewriterStatus.NEEDS_STICK;
 					return ItemStack.EMPTY;
 				}
-				if (missing(inputs, Items.SMOOTH_STONE, transaction)) {
+				if (!takeStone(inputs, variant -> false, transaction)) {
 					status = TypewriterStatus.NEEDS_STONE;
 					return ItemStack.EMPTY;
 				}
@@ -600,6 +621,54 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 			}
 		}
 		return ItemStack.EMPTY;
+	}
+
+	/**
+	 * Moves a stone just like the one wanted from the inputs to the output, so a stone that came back
+	 * from the world costs nothing again. True when it did.
+	 */
+	private static boolean reuse(List<Storage<ItemVariant>> inputs, Storage<ItemVariant> output, ItemVariant wanted) {
+		try (Transaction transaction = Transaction.openOuter()) {
+			for (Storage<ItemVariant> input : inputs) {
+				if (input.extract(wanted, 1, transaction) == 1) {
+					if (output.insert(wanted, 1, transaction) != 1) {
+						return false;
+					}
+					transaction.commit();
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Takes the stone for a new Typestone: an old Typestone from the inputs first (it is wiped and used
+	 * again), then smooth stone, and only then an old one the job will still want as it is (keep).
+	 * True when it took one.
+	 */
+	private static boolean takeStone(List<Storage<ItemVariant>> inputs, Predicate<ItemVariant> keep, Transaction transaction) {
+		if (takeTypestone(inputs, keep.negate(), transaction) || !missing(inputs, Items.SMOOTH_STONE, transaction)) {
+			return true;
+		}
+		return takeTypestone(inputs, variant -> true, transaction);
+	}
+
+	private static boolean takeTypestone(List<Storage<ItemVariant>> inputs, Predicate<ItemVariant> allowed, Transaction transaction) {
+		for (Storage<ItemVariant> input : inputs) {
+			ItemVariant found = null;
+			for (StorageView<ItemVariant> view : input.nonEmptyViews()) {
+				ItemVariant variant = view.getResource();
+				if (variant.isOf(ModBlocks.TYPESTONE_ITEM) && allowed.test(variant)) {
+					found = variant;
+					break;
+				}
+			}
+			if (found != null && input.extract(found, 1, transaction) == 1) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** Takes one item from the first input that has it; true when none has it. */

@@ -9,7 +9,11 @@
 			"de.knito.typestones.test.TypestoneDropTest",
 			"de.knito.typestones.test.LetterLibraryTest",
 			"de.knito.typestones.test.TypewriterFontTest",
-			"de.knito.typestones.test.PencilTest"
+			"de.knito.typestones.test.PencilTest",
+			"de.knito.typestones.test.PictureTest",
+			"de.knito.typestones.test.TypewriterPictureTest",
+			"de.knito.typestones.test.BillboardSupportTest",
+			"de.knito.typestones.test.TypewriterRecycleTest"
 		]
 	},
 	"depends": {
