@@ -336,13 +336,18 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 	}
 
 	/**
-	 * Characters a Typestone can't show are dropped here, so the box shows what the typewriter will make.
-	 * On Start with a font, the letters are baked and uploaded first.
+	 * On Start, characters a Typestone can't show are dropped from the box, so it shows what the typewriter
+	 * will make; with a font, the letters are baked and uploaded first.
 	 */
 	private void send(TypewriterActionPayload.Action action) {
-		String text = cleanText(textBox.getValue());
-		if (!text.equals(textBox.getValue())) {
-			textBox.setValue(text);
+		// Only Start drops what the font can't draw. Saving a setting (scrolling through fonts) must not
+		// eat the text: the next font may have the characters; the typewriter cleans its own copy.
+		String text = textBox.getValue();
+		if (action == TypewriterActionPayload.Action.START) {
+			text = cleanText(text);
+			if (!text.equals(textBox.getValue())) {
+				textBox.setValue(text);
+			}
 		}
 		List<String> letters = List.of();
 		if (action == TypewriterActionPayload.Action.START && !settings.isClassic()) {
