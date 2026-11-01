@@ -28,7 +28,9 @@ First version for Minecraft 26.3 (Fabric). Needed on client and server.
 
 **Pencil**
 - The Typewriter's Pencil button makes a pencil from a stick and a smooth stone, or refills an empty
-  pencil found in its inputs for free (an anvil name stays).
+  pencil found in its inputs for free (an anvil name stays). A pencil that is only half used is
+  recycled the same way, after any empty one: it is the only way to get rid of one, since it doesn't
+  burst when thrown.
 - A pencil places the last line stone by stone from the Typewriter's output: click the last stone to
   go on to its right, click elsewhere to start a new row, sneak-click to put the last stone back. It
   keeps the Typewriter's chunk loaded for 5 minutes after each use.

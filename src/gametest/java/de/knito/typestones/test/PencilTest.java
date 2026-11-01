@@ -115,12 +115,20 @@ public class PencilTest {
 		helper.assertTrue(chest.getItem(0).getCount() == 1 && chest.getItem(1).getCount() == 1, "A refill cost a stick or a stone");
 		helper.assertTrue(Component.literal("Old Faithful").equals(pencil.get(DataComponents.CUSTOM_NAME)), "The refilled pencil lost its name");
 
-		// A pencil with a line left is not empty and stays where it is.
-		chest.setItem(2, pencil.copy());
-		ItemStack fresh = typewriter.makePencil();
-		helper.assertTrue(fresh.has(ModComponents.PENCIL_LINE) && chest.getItem(2).has(ModComponents.PENCIL_LINE)
-						&& chest.getItem(0).isEmpty() && chest.getItem(1).isEmpty(),
-				"A pencil with a line was taken for a refill");
+		// A half used pencil in the inputs is recycled too, but an empty one goes first.
+		ItemStack halfUsed = pencil.copy();
+		chest.setItem(2, halfUsed);
+		chest.setItem(3, new ItemStack(ModPencil.ITEM));
+		ItemStack second = typewriter.makePencil();
+		helper.assertTrue(second.has(ModComponents.PENCIL_LINE) && chest.getItem(3).isEmpty() && chest.getItem(2).has(ModComponents.PENCIL_LINE),
+				"An empty pencil should be refilled before a half used one");
+		ItemStack third = typewriter.makePencil();
+		helper.assertTrue(third.has(ModComponents.PENCIL_LINE) && chest.getItem(2).isEmpty()
+						&& chest.getItem(0).getCount() == 1 && chest.getItem(1).getCount() == 1,
+				"A half used pencil wasn't recycled for free: " + typewriter.status());
+		// With no pencil left in the inputs, a new one costs the stick and the stone again.
+		helper.assertTrue(typewriter.makePencil().has(ModComponents.PENCIL_LINE) && chest.getItem(0).isEmpty() && chest.getItem(1).isEmpty(),
+				"A new pencil didn't cost a stick and a stone");
 		helper.succeed();
 	}
 
