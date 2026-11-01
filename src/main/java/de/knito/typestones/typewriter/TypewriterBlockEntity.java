@@ -605,19 +605,27 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 		return pencil;
 	}
 
-	/** Takes one empty pencil (its line written) from the inputs; empty when there is none. */
+	/**
+	 * Takes one pencil from the inputs to refill: an empty one (its line written) first, then any other,
+	 * since a pencil put into an input is one nobody wants any more. Empty when there is none.
+	 */
 	private static ItemStack takeEmptyPencil(List<Storage<ItemVariant>> inputs, Transaction transaction) {
+		ItemStack empty = takePencil(inputs, true, transaction);
+		return empty.isEmpty() ? takePencil(inputs, false, transaction) : empty;
+	}
+
+	private static ItemStack takePencil(List<Storage<ItemVariant>> inputs, boolean onlyEmpty, Transaction transaction) {
 		for (Storage<ItemVariant> input : inputs) {
-			ItemVariant empty = null;
+			ItemVariant found = null;
 			for (StorageView<ItemVariant> view : input.nonEmptyViews()) {
 				ItemStack stack = view.getResource().toStack();
-				if (stack.is(ModPencil.ITEM) && !stack.has(ModComponents.PENCIL_LINE)) {
-					empty = view.getResource();
+				if (stack.is(ModPencil.ITEM) && (!onlyEmpty || !stack.has(ModComponents.PENCIL_LINE))) {
+					found = view.getResource();
 					break;
 				}
 			}
-			if (empty != null && input.extract(empty, 1, transaction) == 1) {
-				return empty.toStack();
+			if (found != null && input.extract(found, 1, transaction) == 1) {
+				return found.toStack();
 			}
 		}
 		return ItemStack.EMPTY;
