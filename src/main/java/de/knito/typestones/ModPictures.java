@@ -30,12 +30,14 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -43,17 +45,18 @@ import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.fabricmc.loader.api.FabricLoader;
 
+import de.knito.typestones.network.IconPayloads;
 import de.knito.typestones.network.PicturePayloads;
 import de.knito.typestones.picture.Picture;
 import de.knito.typestones.picture.PictureInfo;
 import de.knito.typestones.picture.PictureLibrary;
 import de.knito.typestones.picture.PictureTile;
+import de.knito.typestones.typewriter.TypewriterMenu;
 
 /**
  * Pictures on Typestones: the RGB dye they cost, the server side of the picture library (answers
- * players' requests), and the operator commands to try pictures out until the Lua box can type them.
+ * players' requests, takes item icons), and the operator commands to try pictures out.
  */
 public class ModPictures {
 	private static final ResourceKey<Item> RGB_DYE_KEY = ResourceKey.create(Registries.ITEM, Typestones.id("rgb_dye"));
@@ -69,17 +72,18 @@ public class ModPictures {
 	/** Pictures asked for by a player in the current minute: tick the minute started, and count. */
 	private static final Map<UUID, int[]> USAGE = new HashMap<>();
 
-	/** Mod ids of the mods whose programs can type pictures; without one, pictures and their dye stay hidden. */
-	public static final List<String> SCRIPTING_MODS = List.of("billboard_api", "computercraft");
+	/** Icons a player may bring into the library per minute; a player who opens the Typewriter needs a few. */
+	public static final int ICONS_PER_MINUTE = 64;
 
-	public static boolean scriptingAvailable() {
-		return SCRIPTING_MODS.stream().anyMatch(FabricLoader.getInstance()::isModLoaded);
-	}
+	private static final Map<UUID, int[]> ICON_USAGE = new HashMap<>();
 
 	public static void initialize() {
-		if (scriptingAvailable()) {
-			CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.INGREDIENTS).register(tab -> tab.accept(RGB_DYE));
-		}
+		CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.INGREDIENTS).register(tab -> tab.accept(RGB_DYE));
+
+		PayloadTypeRegistry.serverboundPlay().register(IconPayloads.Upload.TYPE, IconPayloads.Upload.STREAM_CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(IconPayloads.Upload.TYPE,
+				(payload, context) -> receiveIcon(context.player(), payload.itemId(), payload.png()));
+		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> ICON_USAGE.remove(handler.getPlayer().getUUID()));
 
 		PayloadTypeRegistry.serverboundPlay().register(PicturePayloads.Request.TYPE, PicturePayloads.Request.STREAM_CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(PicturePayloads.Part.TYPE, PicturePayloads.Part.STREAM_CODEC);
@@ -88,6 +92,41 @@ public class ModPictures {
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> USAGE.remove(handler.getPlayer().getUUID()));
 
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> registerCommands(dispatcher));
+	}
+
+	/**
+	 * Takes the icon a player's game drew for an item. Only a player with a Typewriter open may send one, it
+	 * must be a one-stone picture of a known item, and the number per minute is limited, so the packet
+	 * can't be used to fill the world's disk. The hash is made here from the pixels, never taken from the client.
+	 */
+	static void receiveIcon(ServerPlayer player, String itemId, byte[] png) {
+		if (!(player.containerMenu instanceof TypewriterMenu)) {
+			return;
+		}
+		Identifier id = Identifier.tryParse(itemId);
+		if (id == null || BuiltInRegistries.ITEM.getOptional(id).filter(item -> item != Items.AIR).isEmpty()) {
+			return;
+		}
+		MinecraftServer server = player.level().getServer();
+		int tick = server.getTickCount();
+		int[] usage = ICON_USAGE.computeIfAbsent(player.getUUID(), uuid -> new int[] {tick, 0});
+		if (tick - usage[0] >= MINUTE) {
+			usage[0] = tick;
+			usage[1] = 0;
+		}
+		if (usage[1]++ >= ICONS_PER_MINUTE) {
+			Typestones.LOGGER.warn("{} sent more than {} icons in a minute", player.getPlainTextName(), ICONS_PER_MINUTE);
+			return;
+		}
+		try {
+			Picture picture = Picture.fromPng(png, 1, 1);
+			PictureInfo info = PictureInfo.of(picture, PictureLibrary.ICON_PREFIX + id, player.getPlainTextName(), LocalDate.now().toString());
+			if (PictureLibrary.get(server).addIcon(picture, info, PictureLibrary.folder(server)) == PictureLibrary.Added.FULL) {
+				Typestones.LOGGER.warn("The icon library is full ({} icons)", PictureLibrary.MAX_ICONS);
+			}
+		} catch (IOException e) {
+			Typestones.LOGGER.warn("Bad icon of {} from {}: {}", itemId, player.getPlainTextName(), e.toString());
+		}
 	}
 
 	/** Sends the pictures the player asked for, each in parts. */

@@ -4,7 +4,8 @@
 	"compatibilityLevel": "JAVA_21",
 	"client": [
 		"ItemModelsAccessor",
-		"ItemTintSourcesAccessor"
+		"ItemTintSourcesAccessor",
+		"SpriteContentsAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

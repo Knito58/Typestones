@@ -14,12 +14,13 @@ import de.knito.typestones.Typestones;
  * A button press in the Typewriter screen. Always carries the current settings. On Start with a font
  * other than classic it also carries the hash of each character's letter, which the player's game
  * baked and uploaded just before; {@link de.knito.typestones.letter.Letters#NONE} stands for a blank.
- * The Pencil button names the picture chosen for the pencil, or nothing for the last job.
+ * The Pencil button names the picture chosen for the pencil, or nothing for the last job. Start Icon
+ * names, in the same field, the hash of the item icon the player's game uploaded just before.
  */
 public record TypewriterActionPayload(Action action, String text, int repeat, FontSettings font, List<String> letters,
 		String pencilPicture) implements CustomPacketPayload {
 	public enum Action {
-		SAVE, START, STOP, GET_PENCIL
+		SAVE, START, STOP, GET_PENCIL, START_ICON
 	}
 
 	public static final Type<TypewriterActionPayload> TYPE = new Type<>(Typestones.id("typewriter_action"));

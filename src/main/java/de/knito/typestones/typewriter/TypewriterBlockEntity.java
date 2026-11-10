@@ -59,6 +59,8 @@ import de.knito.typestones.block.TypestoneItem;
 import de.knito.typestones.letter.LetterLibrary;
 import de.knito.typestones.letter.Letters;
 import de.knito.typestones.picture.Picture;
+import de.knito.typestones.picture.PictureInfo;
+import de.knito.typestones.picture.PictureLibrary;
 import de.knito.typestones.picture.PictureTile;
 import de.knito.typestones.script.TypewriterScript;
 
@@ -325,6 +327,25 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 	 */
 	public void startPicture(Picture picture, PictureTile.Plane plane) {
 		pictureJob = new PictureJob(picture.hash(), picture.cols(), picture.rows(), plane);
+		made = 0;
+		running = true;
+		ticks = 0;
+		status = TypewriterStatus.RUNNING;
+		setChanged();
+	}
+
+	/**
+	 * Starts one stone with the icon of an item, which the player's game put into the picture library
+	 * just before. Costs what a picture stone costs. Fails with PICTURE_GONE when the library doesn't
+	 * have it (not sent, refused, or removed) or it is not a one-stone picture.
+	 */
+	public void startIcon(String hash, PictureLibrary library) {
+		PictureInfo info = library.find(hash);
+		if (info == null || info.cols() != 1 || info.rows() != 1) {
+			status = TypewriterStatus.PICTURE_GONE;
+			return;
+		}
+		pictureJob = new PictureJob(hash, 1, 1, PictureTile.Plane.ANY);
 		made = 0;
 		running = true;
 		ticks = 0;

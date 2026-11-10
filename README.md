@@ -17,6 +17,7 @@ Typewriter makes them from a typed line of text, or from an image a program send
 - **Pictures** (needs [Billboard API](https://github.com/Knito58/Billboard-API) or CC: Tweaked): a
   program has the Typewriter turn a PNG, JPEG or GIF into picture stones, for one smooth stone and one
   RGB dye each. The Lua functions are listed in `CHANGELOG.md`.
+- **Item icons**: a ghost slot in the Typewriter turns any item's texture into a stone, no scripting needed.
 - Optional: Mod Menu for the settings screen.
 
 See `CHANGELOG.md` for everything in detail.
