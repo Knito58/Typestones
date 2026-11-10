@@ -1,5 +1,6 @@
 package de.knito.typestones.block;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -8,6 +9,7 @@ import org.jspecify.annotations.Nullable;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
@@ -49,6 +51,13 @@ public class TypestoneItem extends BlockItem {
 	public ItemStack pictureStack(PictureTile tile) {
 		ItemStack stack = new ItemStack(this);
 		stack.set(ModComponents.PICTURE, tile);
+		return stack;
+	}
+
+	/** A tile of a picture on stones dyed in a background color, which shows where the picture is transparent. */
+	public ItemStack pictureStack(PictureTile tile, Optional<DyeColor> background) {
+		ItemStack stack = pictureStack(tile);
+		background.ifPresent(color -> stack.set(ModComponents.DYES, new Dyes(DyeColor.BLACK, background)));
 		return stack;
 	}
 

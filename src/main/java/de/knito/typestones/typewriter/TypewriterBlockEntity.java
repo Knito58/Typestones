@@ -95,13 +95,17 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 
 	private static final Codec<List<String>> LETTERS_CODEC = Codec.STRING.listOf();
 
-	/** A picture being typed: one stone per tile, row by row from the top left. */
-	public record PictureJob(String hash, int cols, int rows, PictureTile.Plane plane) {
+	/**
+	 * A picture being typed: one stone per tile, row by row from the top left. With a background dye the
+	 * stones are dyed in it, so transparent pixels show that color instead of smooth stone.
+	 */
+	public record PictureJob(String hash, int cols, int rows, PictureTile.Plane plane, Optional<DyeColor> background) {
 		public static final Codec<PictureJob> CODEC = RecordCodecBuilder.create(instance -> instance.group(
 				Codec.STRING.fieldOf("hash").forGetter(PictureJob::hash),
 				Codec.intRange(1, Picture.MAX_STONES).fieldOf("cols").forGetter(PictureJob::cols),
 				Codec.intRange(1, Picture.MAX_STONES).fieldOf("rows").forGetter(PictureJob::rows),
-				PictureTile.Plane.CODEC.optionalFieldOf("plane", PictureTile.Plane.WALL).forGetter(PictureJob::plane)
+				PictureTile.Plane.CODEC.optionalFieldOf("plane", PictureTile.Plane.WALL).forGetter(PictureJob::plane),
+				DyeColor.CODEC.optionalFieldOf("background").forGetter(PictureJob::background)
 		).apply(instance, PictureJob::new));
 
 		public static final StreamCodec<ByteBuf, PictureJob> STREAM_CODEC = StreamCodec.composite(
@@ -110,11 +114,16 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 				ByteBufCodecs.VAR_INT, PictureJob::rows,
 				ByteBufCodecs.idMapper(i -> PictureTile.Plane.values()[Math.clamp(i, 0, PictureTile.Plane.values().length - 1)],
 						PictureTile.Plane::ordinal), PictureJob::plane,
+				ByteBufCodecs.optional(DyeColor.STREAM_CODEC), PictureJob::background,
 				PictureJob::new);
 
-		/** The picture a stone belongs to. */
-		public static PictureJob of(PictureTile tile) {
-			return new PictureJob(tile.hash(), tile.cols(), tile.rows(), tile.plane());
+		public PictureJob(String hash, int cols, int rows, PictureTile.Plane plane) {
+			this(hash, cols, rows, plane, Optional.empty());
+		}
+
+		/** The picture a stone belongs to, with the background dye of the stone. */
+		public static PictureJob of(PictureTile tile, Optional<DyeColor> background) {
+			return new PictureJob(tile.hash(), tile.cols(), tile.rows(), tile.plane(), background);
 		}
 
 		public PictureJob {
@@ -340,12 +349,17 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 	 * have it (not sent, refused, or removed) or it is not a one-stone picture.
 	 */
 	public void startIcon(String hash, PictureLibrary library) {
+		startIcon(hash, library, dyeOf(dyeSamples.getItem(SLOT_BACKGROUND)));
+	}
+
+	/** The same with the background dye given: it is used up on each stone and shows where the icon is transparent. */
+	public void startIcon(String hash, PictureLibrary library, Optional<DyeColor> background) {
 		PictureInfo info = library.find(hash);
 		if (info == null || info.cols() != 1 || info.rows() != 1) {
 			status = TypewriterStatus.PICTURE_GONE;
 			return;
 		}
-		pictureJob = new PictureJob(hash, 1, 1, PictureTile.Plane.ANY);
+		pictureJob = new PictureJob(hash, 1, 1, PictureTile.Plane.ANY, background);
 		made = 0;
 		running = true;
 		ticks = 0;
@@ -484,7 +498,7 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 
 	/** The next stone of the picture job: one smooth stone and one RGB dye, all or nothing. */
 	private TypewriterStatus makePictureStone(Storage<ItemVariant> output, List<Storage<ItemVariant>> inputs) {
-		ItemStack stone = ModBlocks.TYPESTONE_ITEM.pictureStack(pictureJob.tile(made));
+		ItemStack stone = ModBlocks.TYPESTONE_ITEM.pictureStack(pictureJob.tile(made), pictureJob.background());
 		if (reuse(inputs, output, ItemVariant.of(stone))) {
 			made++;
 			return TypewriterStatus.RUNNING;
@@ -500,6 +514,9 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 			}
 			if (missing(inputs, ModPictures.RGB_DYE, transaction)) {
 				return TypewriterStatus.NEEDS_RGB_DYE;
+			}
+			if (pictureJob.background().isPresent() && missing(inputs, dyeItem(pictureJob.background().get()), transaction)) {
+				return TypewriterStatus.NEEDS_BACKGROUND_DYE;
 			}
 			if (output.insert(ItemVariant.of(stone), 1, transaction) != 1) {
 				return TypewriterStatus.OUTPUT_FULL;
@@ -536,17 +553,18 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 	/** Most pictures the screen offers a pencil for. */
 	public static final int MAX_PENCIL_PICTURES = 8;
 
-	/** The pictures with stones in the output, in the order they are found there, one tile of each. */
-	public List<PictureTile> outputPictures() {
+	/** The pictures with stones in the output, in the order they are found there, as jobs: one tile of each, with its stones' background. */
+	public List<PictureJob> outputPictures() {
 		Storage<ItemVariant> output = output();
 		if (output == null) {
 			return List.of();
 		}
-		Map<String, PictureTile> found = new LinkedHashMap<>();
+		Map<String, PictureJob> found = new LinkedHashMap<>();
 		for (StorageView<ItemVariant> view : output.nonEmptyViews()) {
-			PictureTile tile = view.getResource().toStack().get(ModComponents.PICTURE);
+			ItemStack stack = view.getResource().toStack();
+			PictureTile tile = stack.get(ModComponents.PICTURE);
 			if (tile != null) {
-				found.putIfAbsent(tile.hash(), tile);
+				found.putIfAbsent(tile.hash(), PictureJob.of(tile, TypestoneItem.dyes(stack).background()));
 				if (found.size() >= MAX_PENCIL_PICTURES) {
 					break;
 				}
@@ -566,7 +584,7 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 		} else if (!jobLetters.isEmpty()) {
 			choices.add(new TypewriterActionPayload.PencilChoice("", jobText, jobLetters.size(), 1));
 		}
-		for (PictureTile tile : outputPictures()) {
+		for (PictureJob tile : outputPictures()) {
 			if (pictureJob == null || !tile.hash().equals(pictureJob.hash())) {
 				choices.add(new TypewriterActionPayload.PencilChoice(tile.hash(), "", tile.cols(), tile.rows()));
 			}
@@ -587,7 +605,7 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 	public ItemStack makePencil(String pictureHash) {
 		PictureJob picture = pictureJob;
 		if (!pictureHash.isEmpty()) {
-			picture = outputPictures().stream().filter(tile -> tile.hash().equals(pictureHash)).findFirst().map(PictureJob::of).orElse(null);
+			picture = outputPictures().stream().filter(job -> job.hash().equals(pictureHash)).findFirst().orElse(null);
 			if (picture == null) {
 				status = TypewriterStatus.PICTURE_GONE;
 				return ItemStack.EMPTY;

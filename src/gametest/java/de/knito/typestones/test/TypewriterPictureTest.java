@@ -22,6 +22,7 @@ import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import de.knito.typestones.ModComponents;
 import de.knito.typestones.ModPictures;
 import de.knito.typestones.ModTypewriter;
+import de.knito.typestones.block.TypestoneItem;
 import de.knito.typestones.picture.Picture;
 import de.knito.typestones.picture.PictureInfo;
 import de.knito.typestones.picture.PictureLibrary;
@@ -185,6 +186,7 @@ public class TypewriterPictureTest {
 		}
 		input.setItem(0, new ItemStack(Items.SMOOTH_STONE, 2));
 		input.setItem(1, new ItemStack(ModPictures.RGB_DYE, 2));
+		input.setItem(2, new ItemStack(TypewriterBlockEntity.dyeItem(net.minecraft.world.item.DyeColor.RED), 1));
 
 		PictureLibrary library = PictureLibrary.get(helper.getLevel().getServer());
 		java.nio.file.Path folder;
@@ -209,13 +211,15 @@ public class TypewriterPictureTest {
 
 		typewriter.startIcon("0123456789abcdef", library);
 		helper.assertTrue(typewriter.status() == TypewriterStatus.PICTURE_GONE && !typewriter.isRunning(), "An unknown icon started");
-		typewriter.startIcon(icon.hash(), library);
+		typewriter.startIcon(icon.hash(), library, java.util.Optional.of(net.minecraft.world.item.DyeColor.RED));
 		helper.succeedWhen(() -> {
 			helper.assertTrue(typewriter.status() == TypewriterStatus.DONE, "Not done: " + typewriter.status());
 			PictureTile tile = output.getItem(0).get(ModComponents.PICTURE);
 			helper.assertTrue(tile != null && tile.hash().equals(icon.hash()) && tile.cols() == 1 && tile.rows() == 1
 					&& tile.plane() == PictureTile.Plane.ANY, "Wrong stone: " + tile);
-			helper.assertTrue(input.getItem(0).getCount() == 1 && input.getItem(1).getCount() == 1, "Wrong cost taken");
+			helper.assertTrue(TypestoneItem.dyes(output.getItem(0)).background().equals(java.util.Optional.of(net.minecraft.world.item.DyeColor.RED)),
+					"The stone isn't dyed in the background color");
+			helper.assertTrue(input.getItem(0).getCount() == 1 && input.getItem(1).getCount() == 1 && input.getItem(2).isEmpty(), "Wrong cost taken");
 			library.remove(icon.hash(), folder);
 		});
 	}

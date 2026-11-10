@@ -17,7 +17,9 @@ First version for Minecraft 26.3 (Fabric). Needed on client and server.
   item's texture, for one smooth stone and one RGB dye. The picture is taken from the player's own
   resource pack and kept in the world as plain pixels, so other players and the server need no pack.
   Flat items come out pixel for pixel; blocks show their flat texture, not the tilted cube; animated
-  textures use their first frame; tints (dyed leather, potions) are not applied.
+  textures use their first frame; tints (dyed leather, potions) are not applied. The icon keeps a
+  margin of an eighth of the stone on each side. With a background dye set, the stone is dyed in it
+  (shown where the icon is transparent) and each stone uses up one of that dye.
 - Makes Typestones from a typed line of up to 128 characters, one stone every 5 ticks, repeated up
   to 64 times. Takes smooth stone and dyes from inventories on any side and puts the stones into the
   inventory at its back.

@@ -163,7 +163,7 @@ public final class PencilWriter {
 	/** The stone at index of the pencil's line or picture, as an item of the Typewriter's output. */
 	private static ItemStack stone(ItemStack pencil, PencilLine line, int index) {
 		return line.picture().isPresent()
-				? ModBlocks.TYPESTONE_ITEM.pictureStack(line.tile(index))
+				? ModBlocks.TYPESTONE_ITEM.pictureStack(line.tile(index), line.picture().get().background())
 				: ModBlocks.TYPESTONE_ITEM.stack(line.letters().get(index), dyes(pencil), 1);
 	}
 

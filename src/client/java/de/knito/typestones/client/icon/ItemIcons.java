@@ -48,12 +48,30 @@ public final class ItemIcons {
 			return null;
 		}
 		try {
-			return Picture.of(scale(((SpriteContentsAccessor) contents).typestones$originalImage(), contents.width(), contents.height(),
-					TypestonesConfig.get().pictureResolution()), 1, 1, TypestonesConfig.get().pictureResolution(), Picture.Mode.STRETCH);
+			int size = TypestonesConfig.get().pictureResolution();
+			return Picture.of(framed(scale(((SpriteContentsAccessor) contents).typestones$originalImage(), contents.width(), contents.height(),
+					size - 2 * margin(size)), size), 1, 1, size, Picture.Mode.STRETCH);
 		} catch (IllegalStateException e) {
 			// The game already freed the sprite's image.
 			return null;
 		}
+	}
+
+	/** Transparent pixels on each side, so the icon doesn't touch the edge of the stone: an eighth. */
+	static int margin(int size) {
+		return size / 8;
+	}
+
+	/** The image in the middle of a transparent size x size image. */
+	static BufferedImage framed(BufferedImage image, int size) {
+		BufferedImage framed = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+		int offset = (size - image.getWidth()) / 2;
+		for (int y = 0; y < image.getHeight(); y++) {
+			for (int x = 0; x < image.getWidth(); x++) {
+				framed.setRGB(offset + x, offset + y, image.getRGB(x, y));
+			}
+		}
+		return framed;
 	}
 
 	/**
