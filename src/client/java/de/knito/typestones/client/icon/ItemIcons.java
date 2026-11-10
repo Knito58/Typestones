@@ -15,7 +15,6 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
-import de.knito.typestones.TypestonesConfig;
 import de.knito.typestones.client.mixin.SpriteContentsAccessor;
 import de.knito.typestones.picture.Picture;
 
@@ -31,7 +30,7 @@ public final class ItemIcons {
 	private ItemIcons() {
 	}
 
-	/** The one-stone picture of the item at the configured resolution, or null when it has no texture to take. */
+	/** The one-stone picture of the item at 64 px, or null when it has no texture to take. */
 	public static @Nullable Picture of(ItemStack stack) {
 		Minecraft minecraft = Minecraft.getInstance();
 		if (stack.isEmpty() || minecraft.player == null) {
@@ -48,19 +47,22 @@ public final class ItemIcons {
 			return null;
 		}
 		try {
-			int size = TypestonesConfig.get().pictureResolution();
 			return Picture.of(framed(scale(((SpriteContentsAccessor) contents).typestones$originalImage(), contents.width(), contents.height(),
-					size - 2 * margin(size)), size), 1, 1, size, Picture.Mode.STRETCH);
+					SIZE - 2 * MARGIN), SIZE), 1, 1, SIZE, Picture.Mode.STRETCH);
 		} catch (IllegalStateException e) {
 			// The game already freed the sprite's image.
 			return null;
 		}
 	}
 
+	/**
+	 * Icons are always 64 px, whatever the setting for new pictures: a vanilla 16 px texture then
+	 * enlarges exactly 3x (48 px) inside a margin of 8, so each texture pixel is a sharp 3 x 3 block.
+	 * It is one small texture per icon.
+	 */
+	static final int SIZE = 64;
 	/** Transparent pixels on each side, so the icon doesn't touch the edge of the stone: an eighth. */
-	static int margin(int size) {
-		return size / 8;
-	}
+	static final int MARGIN = 8;
 
 	/** The image in the middle of a transparent size x size image. */
 	static BufferedImage framed(BufferedImage image, int size) {
