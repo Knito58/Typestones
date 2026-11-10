@@ -535,6 +535,24 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 	}
 
 	/**
+	 * True when the last line is worth a pencil: it has ink (a line of only blanks isn't) and at least
+	 * one of its letters lies as a stone in the output, so the offer goes when the stones are gone.
+	 */
+	private boolean lineInOutput() {
+		Storage<ItemVariant> output = output();
+		if (output == null || jobLetters.stream().allMatch(Letters.NONE::equals)) {
+			return false;
+		}
+		for (StorageView<ItemVariant> view : output.nonEmptyViews()) {
+			ItemStack stack = view.getResource().toStack();
+			if (stack.get(ModComponents.PICTURE) == null && jobLetters.contains(TypestoneItem.letter(stack))) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * What the Pencil button offers: the last job first (a picture, or a line with its text), then the
 	 * other pictures with stones in the output. A line is the choice with an empty hash.
 	 */
@@ -542,7 +560,7 @@ public class TypewriterBlockEntity extends BlockEntity implements ExtendedMenuPr
 		List<TypewriterActionPayload.PencilChoice> choices = new ArrayList<>();
 		if (pictureJob != null) {
 			choices.add(new TypewriterActionPayload.PencilChoice(pictureJob.hash(), "", pictureJob.cols(), pictureJob.rows()));
-		} else if (!jobLetters.isEmpty()) {
+		} else if (lineInOutput()) {
 			choices.add(new TypewriterActionPayload.PencilChoice("", jobText, jobLetters.size(), 1));
 		}
 		for (PictureTile tile : outputPictures()) {
