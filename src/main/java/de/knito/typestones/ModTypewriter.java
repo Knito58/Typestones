@@ -21,6 +21,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 
 import de.knito.typestones.letter.LetterLibrary;
+import de.knito.typestones.picture.PictureLibrary;
 import de.knito.typestones.typewriter.TypewriterBlock;
 import de.knito.typestones.typewriter.TypewriterBlockEntity;
 import de.knito.typestones.typewriter.TypewriterMenu;
@@ -72,6 +73,7 @@ public class ModTypewriter {
 				case SAVE -> {
 				}
 				case START -> typewriter.start(payload.letters(), LetterLibrary.get(context.player().level().getServer()));
+				case START_ICON -> typewriter.startIcon(payload.pencilPicture(), PictureLibrary.get(context.player().level().getServer()));
 				case STOP -> typewriter.stop();
 				case GET_PENCIL -> {
 					ItemStack pencil = typewriter.makePencil(payload.pencilPicture());

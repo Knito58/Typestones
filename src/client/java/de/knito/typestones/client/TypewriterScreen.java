@@ -17,10 +17,12 @@ import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Util;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
@@ -30,6 +32,9 @@ import de.knito.typestones.ModPencil;
 import de.knito.typestones.Typestones;
 import de.knito.typestones.client.bake.LetterBaker;
 import de.knito.typestones.client.bake.LineBaker;
+import de.knito.typestones.client.icon.ItemIcons;
+import de.knito.typestones.network.IconPayloads;
+import de.knito.typestones.picture.Picture;
 import de.knito.typestones.client.network.LetterSync;
 import de.knito.typestones.glyph.GlyphSet;
 import de.knito.typestones.letter.Letter;
@@ -81,6 +86,10 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 	/** The pencil choice shown, by hash; empty for the first choice, the last job. */
 	private String pencilHash = "";
 	private PencilButton pencilButton;
+	private IconButton iconButton;
+	private Button startButton;
+	/** The item whose icon Start makes, as a ghost: nothing moves; null makes the typed line. Kept while the screen is open. */
+	private @Nullable ItemStack icon;
 	/** Until this tick the status line says what the pencil is for, after a choice. */
 	private int pencilNoteUntil;
 	private int ticks;
@@ -119,12 +128,14 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		addRenderableWidget(Button.builder(Component.translatable("gui.typestones.clear"), b -> preset(""))
 				.bounds(leftPos + 128, topPos + 40, 40, 18).build());
 
-		pencilButton = addRenderableWidget(new PencilButton(leftPos + 52, topPos + 64, 100, 18));
+		pencilButton = addRenderableWidget(new PencilButton(leftPos + 52, topPos + 64, 76, 18));
+		iconButton = addRenderableWidget(new IconButton(leftPos + 130, topPos + 64, 22, 18));
 		addRenderableWidget(Button.builder(Component.literal("▲"), b -> stepPencil(-1))
 				.bounds(leftPos + 154, topPos + 64, 14, 9).build());
 		addRenderableWidget(Button.builder(Component.literal("▼"), b -> stepPencil(1))
 				.bounds(leftPos + 154, topPos + 73, 14, 9).build());
 		updatePencilButton();
+		updateIconTooltip();
 
 		addRenderableWidget(Button.builder(Component.literal("-"), b -> changeRepeat(-1))
 				.bounds(leftPos + 8, topPos + 88, 14, 18).build());
@@ -137,7 +148,7 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		fontButtons.clear();
 		fontButtons.add(sizeButton);
 		fontButtons.add(styleButton);
-		addRenderableWidget(Button.builder(Component.translatable("gui.typestones.start"), b -> send(TypewriterActionPayload.Action.START))
+		startButton = addRenderableWidget(Button.builder(startLabel(), b -> start())
 				.bounds(leftPos + 8, topPos + 108, 78, 18).build());
 		addRenderableWidget(Button.builder(Component.translatable("gui.typestones.stop"), b -> send(TypewriterActionPayload.Action.STOP))
 				.bounds(leftPos + 90, topPos + 108, 78, 18).build());
@@ -380,6 +391,51 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 		ClientPlayNetworking.send(new TypewriterActionPayload(action, text, currentRepeat(), settings, letters, pencilHash));
 	}
 
+	/** Public so a recipe viewer can drop an item on the screen. Only the item counts, not the amount. */
+	public void setIcon(ItemStack stack) {
+		icon = stack.isEmpty() ? null : stack.copyWithCount(1);
+		startButton.setMessage(startLabel());
+		updateIconTooltip();
+	}
+
+	private void updateIconTooltip() {
+		iconButton.setTooltip(Tooltip.create(icon == null ? Component.translatable("gui.typestones.icon_tooltip_empty")
+				: Component.translatable("gui.typestones.icon_tooltip", icon.getHoverName())));
+	}
+
+	private Component startLabel() {
+		return Component.translatable(icon == null ? "gui.typestones.start" : "gui.typestones.start_icon");
+	}
+
+	/** Start: the line, or the icon of the chosen item. */
+	private void start() {
+		if (icon == null) {
+			send(TypewriterActionPayload.Action.START);
+			return;
+		}
+		Picture picture = ItemIcons.of(icon);
+		if (picture == null) {
+			toast(Component.translatable("gui.typestones.toast.no_icon", icon.getHoverName()));
+			return;
+		}
+		// Goes out before the action, in order, so the library has it when the Typewriter looks.
+		String id = BuiltInRegistries.ITEM.getKey(icon.getItem()).toString();
+		ClientPlayNetworking.send(new IconPayloads.Upload(id, picture.toPng()));
+		ClientPlayNetworking.send(new TypewriterActionPayload(TypewriterActionPayload.Action.START_ICON, textBox.getValue(),
+				currentRepeat(), settings, List.of(), picture.hash()));
+	}
+
+	/** Shift-click on an item in the inventory chooses it for the icon, unless it is a dye (those set the dye samples). */
+	@Override
+	protected void slotClicked(@Nullable Slot slot, int slotId, int button, ContainerInput input) {
+		if (slot != null && input == ContainerInput.QUICK_MOVE && slot.index > TypewriterBlockEntity.SLOT_BACKGROUND && slot.hasItem()
+				&& !menu.claimed() && TypewriterBlockEntity.dyeOf(slot.getItem()).isEmpty()) {
+			setIcon(slot.getItem());
+			return;
+		}
+		super.slotClicked(slot, slotId, button, input);
+	}
+
 	/** Also drops what the chosen font can't draw, when this computer has the font. */
 	private String cleanText(String typed) {
 		String text = TypewriterBlockEntity.cleanText(typed, settings.isClassic());
@@ -619,6 +675,26 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 			graphics.item(icon, getX() + 2, getY());
 			String label = cut(getMessage().getString(), getWidth() - 24);
 			graphics.text(font, label, getX() + 20, getY() + (getHeight() - 8) / 2, active ? 0xFFFFFFFF : 0xFFA0A0A0, true);
+		}
+	}
+
+	/** The icon slot beside the Pencil button: click it with an item on the cursor, empty-handed to clear. */
+	private final class IconButton extends Button {
+		IconButton(int x, int y, int width, int height) {
+			super(x, y, width, height, Component.empty(), b -> {
+				ItemStack carried = menu.getCarried();
+				setIcon(carried.isEmpty() ? ItemStack.EMPTY : carried);
+			}, DEFAULT_NARRATION);
+		}
+
+		@Override
+		protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+			extractDefaultSprite(graphics);
+			if (icon == null) {
+				graphics.text(font, "?", getX() + (getWidth() - font.width("?")) / 2, getY() + (getHeight() - 8) / 2, active ? 0xFFFFFFFF : 0xFFA0A0A0, true);
+			} else {
+				graphics.item(icon, getX() + 3, getY() + 1);
+			}
 		}
 	}
 

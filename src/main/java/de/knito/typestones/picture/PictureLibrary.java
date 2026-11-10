@@ -29,6 +29,10 @@ import de.knito.typestones.Typestones;
 public class PictureLibrary extends SavedData {
 	/** At most 16 x 16 stones each; a full library of big photos is a few hundred MB of PNG files. */
 	public static final int MAX_PICTURES = 1024;
+	/** Item icons are one small stone each and have a library part of their own, so they don't crowd out photos. */
+	public static final int MAX_ICONS = 4096;
+	/** What the name of an icon starts with; the rest is the item's id. */
+	public static final String ICON_PREFIX = "item:";
 
 	private static final Codec<PictureLibrary> CODEC = PictureInfo.CODEC.listOf().fieldOf("pictures").codec()
 			.xmap(PictureLibrary::new, library -> List.copyOf(library.pictures.values()));
@@ -75,7 +79,7 @@ public class PictureLibrary extends SavedData {
 		if (pictures.containsKey(picture.hash())) {
 			return Added.KNOWN;
 		}
-		if (pictures.size() >= MAX_PICTURES) {
+		if (pictures.values().stream().filter(known -> !isIcon(known)).count() >= MAX_PICTURES) {
 			return Added.FULL;
 		}
 		Files.createDirectories(folder);
@@ -83,6 +87,25 @@ public class PictureLibrary extends SavedData {
 		pictures.put(picture.hash(), info);
 		setDirty();
 		return Added.NEW;
+	}
+
+	/** Adds an item icon, counted against {@link #MAX_ICONS} instead of {@link #MAX_PICTURES}. */
+	public Added addIcon(Picture picture, PictureInfo info, Path folder) throws IOException {
+		if (pictures.containsKey(picture.hash())) {
+			return Added.KNOWN;
+		}
+		if (pictures.values().stream().filter(PictureLibrary::isIcon).count() >= MAX_ICONS) {
+			return Added.FULL;
+		}
+		Files.createDirectories(folder);
+		Files.write(file(folder, picture.hash()), picture.toPng());
+		pictures.put(picture.hash(), info);
+		setDirty();
+		return Added.NEW;
+	}
+
+	public static boolean isIcon(PictureInfo info) {
+		return info.cols() == 1 && info.rows() == 1 && info.name().startsWith(ICON_PREFIX);
 	}
 
 	/** The PNG of a picture in the list, or null when it isn't in the list or its file is gone. */

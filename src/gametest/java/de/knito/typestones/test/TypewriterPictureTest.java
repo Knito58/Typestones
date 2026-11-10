@@ -22,6 +22,10 @@ import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import de.knito.typestones.ModComponents;
 import de.knito.typestones.ModPictures;
 import de.knito.typestones.ModTypewriter;
+import de.knito.typestones.block.TypestoneItem;
+import de.knito.typestones.picture.Picture;
+import de.knito.typestones.picture.PictureInfo;
+import de.knito.typestones.picture.PictureLibrary;
 import de.knito.typestones.picture.PictureTile;
 import de.knito.typestones.script.TypewriterScript;
 import de.knito.typestones.typewriter.TypewriterBlock;
@@ -162,6 +166,61 @@ public class TypewriterPictureTest {
 			helper.assertTrue(first != null && second != null && first.col() == 0 && second.col() == 1
 					&& first.plane() == PictureTile.Plane.FLAT && first.hash().equals(second.hash()), "Wrong stones: " + first + ", " + second);
 			helper.assertTrue(input.getItem(0).getCount() == 3 && input.getItem(1).isEmpty(), "Wrong cost taken");
+		});
+	}
+
+	/**
+	 * An item icon from the library: one stone for a smooth stone and an RGB dye, standing as clicked.
+	 * An unknown hash, or a picture of more than one stone, is refused. Icons have a library part of their own.
+	 */
+	@GameTest(maxTicks = 100)
+	public void iconJobMakesOneStone(GameTestHelper helper) {
+		BlockPos pos = new BlockPos(1, 1, 1);
+		helper.setBlock(pos, ModTypewriter.BLOCK.defaultBlockState().setValue(TypewriterBlock.FACING, Direction.NORTH));
+		helper.setBlock(pos.west(), Blocks.CHEST);
+		helper.setBlock(pos.south(), Blocks.CHEST);
+		if (!(helper.getBlockEntity(pos, TypewriterBlockEntity.class) instanceof TypewriterBlockEntity typewriter)
+				|| !(helper.getBlockEntity(pos.west(), ChestBlockEntity.class) instanceof ChestBlockEntity input)
+				|| !(helper.getBlockEntity(pos.south(), ChestBlockEntity.class) instanceof ChestBlockEntity output)) {
+			throw helper.assertionException(Component.literal("Typewriter or chests missing"));
+		}
+		input.setItem(0, new ItemStack(Items.SMOOTH_STONE, 2));
+		input.setItem(1, new ItemStack(ModPictures.RGB_DYE, 2));
+		input.setItem(2, new ItemStack(TypewriterBlockEntity.dyeItem(net.minecraft.world.item.DyeColor.RED), 1));
+
+		PictureLibrary library = PictureLibrary.get(helper.getLevel().getServer());
+		java.nio.file.Path folder;
+		try {
+			folder = java.nio.file.Files.createTempDirectory("typestones-icons");
+		} catch (IOException e) {
+			throw new AssertionError(e);
+		}
+		BufferedImage image = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+		for (int i = 0; i < 16; i++) {
+			image.setRGB(i, i, 0xFFC0C0C0);
+		}
+		Picture icon = Picture.of(image, 1, 1, 16, Picture.Mode.STRETCH);
+		PictureInfo info = PictureInfo.of(icon, PictureLibrary.ICON_PREFIX + "minecraft:iron_ingot", "test", "2026-11-10");
+		try {
+			helper.assertTrue(library.addIcon(icon, info, folder) == PictureLibrary.Added.NEW, "The icon wasn't added");
+			helper.assertTrue(library.addIcon(icon, info, folder) == PictureLibrary.Added.KNOWN, "The same icon was added twice");
+		} catch (IOException e) {
+			throw new AssertionError(e);
+		}
+		helper.assertTrue(PictureLibrary.isIcon(info), "An icon isn't taken for one");
+
+		typewriter.startIcon("0123456789abcdef", library);
+		helper.assertTrue(typewriter.status() == TypewriterStatus.PICTURE_GONE && !typewriter.isRunning(), "An unknown icon started");
+		typewriter.startIcon(icon.hash(), library, java.util.Optional.of(net.minecraft.world.item.DyeColor.RED));
+		helper.succeedWhen(() -> {
+			helper.assertTrue(typewriter.status() == TypewriterStatus.DONE, "Not done: " + typewriter.status());
+			PictureTile tile = output.getItem(0).get(ModComponents.PICTURE);
+			helper.assertTrue(tile != null && tile.hash().equals(icon.hash()) && tile.cols() == 1 && tile.rows() == 1
+					&& tile.plane() == PictureTile.Plane.ANY, "Wrong stone: " + tile);
+			helper.assertTrue(TypestoneItem.dyes(output.getItem(0)).background().equals(java.util.Optional.of(net.minecraft.world.item.DyeColor.RED)),
+					"The stone isn't dyed in the background color");
+			helper.assertTrue(input.getItem(0).getCount() == 1 && input.getItem(1).getCount() == 1 && input.getItem(2).isEmpty(), "Wrong cost taken");
+			library.remove(icon.hash(), folder);
 		});
 	}
 }

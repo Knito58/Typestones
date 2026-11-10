@@ -137,11 +137,10 @@ public class PictureTest {
 	}
 
 	@GameTest
-	public void rgbDyeRecipeOnlyWithScripting(GameTestHelper helper) {
-		// Without Billboard API or CC: Tweaked nothing can make pictures, so the dye has no recipe.
+	public void rgbDyeHasARecipe(GameTestHelper helper) {
+		// Item icons need the dye without any scripting mod, so the recipe is always there.
 		var key = ResourceKey.create(Registries.RECIPE, Typestones.id("rgb_dye"));
-		helper.assertTrue(helper.getLevel().recipeAccess().byKey(key).isPresent() == ModPictures.scriptingAvailable(),
-				"The RGB dye recipe should load exactly when a scripting mod is there");
+		helper.assertTrue(helper.getLevel().recipeAccess().byKey(key).isPresent(), "The RGB dye recipe didn't load");
 		helper.assertTrue(ModPictures.RGB_DYE != null, "No RGB dye");
 		helper.succeed();
 	}

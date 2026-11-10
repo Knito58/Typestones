@@ -305,7 +305,7 @@ public class PencilTest {
 		output.setItem(1, ModBlocks.TYPESTONE_ITEM.pictureStack(fruits.tile(4)));
 		output.setItem(2, ModBlocks.TYPESTONE_ITEM.pictureStack(sun.tile(0)));
 		output.setItem(3, ModBlocks.TYPESTONE_ITEM.pictureStack(fruits.tile(0)));
-		List<String> found = typewriter.outputPictures().stream().map(PictureTile::hash).toList();
+		List<String> found = typewriter.outputPictures().stream().map(TypewriterBlockEntity.PictureJob::hash).toList();
 		helper.assertTrue(found.equals(List.of("f00d", "5a1")), "Pictures in the output: " + found);
 		List<TypewriterActionPayload.PencilChoice> choices = typewriter.pencilChoices();
 		helper.assertTrue(choices.equals(List.of(new TypewriterActionPayload.PencilChoice("f00d", "", 3, 2),

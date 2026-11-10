@@ -12,6 +12,14 @@ First version for Minecraft 26.3 (Fabric). Needed on client and server.
   viewers stay clean.
 
 **Typewriter**
+- Item icons: the "?" slot beside the Pencil button takes an item as a ghost (click it with the item on
+  the cursor, or shift-click the item in your inventory). Start then makes one stone showing that
+  item's texture, for one smooth stone and one RGB dye. The picture is taken from the player's own
+  resource pack and kept in the world as plain pixels, so other players and the server need no pack.
+  Icons are always 64 px per stone: a 16 px texture is enlarged exactly 3x, every texture pixel a sharp 3 x 3 block. Flat items come out pixel for pixel; blocks show their flat texture, not the tilted cube; animated
+  textures use their first frame; tints (dyed leather, potions) are not applied. The icon keeps a
+  margin of an eighth of the stone on each side. With a background dye set, the stone is dyed in it
+  (shown where the icon is transparent) and each stone uses up one of that dye.
 - Makes Typestones from a typed line of up to 128 characters, one stone every 5 ticks, repeated up
   to 64 times. Takes smooth stone and dyes from inventories on any side and puts the stones into the
   inventory at its back.
@@ -53,7 +61,7 @@ First version for Minecraft 26.3 (Fabric). Needed on client and server.
   GIF first frame) as picture stones: up to 8 x 8 stones by default, at 16, 32 or 64 pixels per stone,
   fitted (`fit`), filled (`fill`) or stretched (`stretch`), for a wall, floor or ceiling.
 - Each picture stone costs one smooth stone and one RGB dye (black, white, red, green and blue dye make
-  8). Without Billboard API or CC: Tweaked the RGB dye and its recipe stay hidden.
+  8).
 - Picture stones show their part front and back, so the picture reads right from both sides, and name
   the image they come from in their tooltip. Transparent pixels show the plain stone.
 - Lua functions: `claim`, `release`, `isClaimed`, `setText`, `getText`, `go`, `stop`, `isRunning`,
