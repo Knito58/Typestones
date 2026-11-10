@@ -16,7 +16,7 @@ First version for Minecraft 26.3 (Fabric). Needed on client and server.
   the cursor, or shift-click the item in your inventory). Start then makes one stone showing that
   item's texture, for one smooth stone and one RGB dye. The picture is taken from the player's own
   resource pack and kept in the world as plain pixels, so other players and the server need no pack.
-  Icons are always 64 px per stone: a 16 px texture is enlarged exactly 3x, every texture pixel a sharp 3 x 3 block. Flat items come out pixel for pixel; blocks show their flat texture, not the tilted cube; animated
+  Icons are always 64 px per stone: a 16 px texture is enlarged exactly 3x with Scale3x (diagonals come out as clean lines instead of stairs) and its edge is blended into the background, which is the flat color of the background dye or, without one, the smooth stone texture. Flat items come out as their texture; blocks show their flat texture, not the tilted cube; animated
   textures use their first frame; tints (dyed leather, potions) are not applied. The icon keeps a
   margin of an eighth of the stone on each side. With a background dye set, the stone is dyed in it
   (shown where the icon is transparent) and each stone uses up one of that dye.

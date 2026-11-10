@@ -413,7 +413,8 @@ public class TypewriterScreen extends AbstractContainerScreen<TypewriterMenu> {
 			send(TypewriterActionPayload.Action.START);
 			return;
 		}
-		Picture picture = ItemIcons.of(icon);
+		// The background the stone will get is the dye set here; the server reads the same setting.
+		Picture picture = ItemIcons.of(icon, TypewriterBlockEntity.dyeOf(menu.getSlot(TypewriterBlockEntity.SLOT_BACKGROUND).getItem()));
 		if (picture == null) {
 			toast(Component.translatable("gui.typestones.toast.no_icon", icon.getHoverName()));
 			return;
