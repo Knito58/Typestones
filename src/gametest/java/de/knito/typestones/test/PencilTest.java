@@ -264,6 +264,31 @@ public class PencilTest {
 	}
 
 	@GameTest
+	public void pencilForALineOnlyWhileItsStonesAreInTheOutput(GameTestHelper helper) {
+		BlockPos pos = new BlockPos(1, 1, 1);
+		helper.setBlock(pos, ModTypewriter.BLOCK.defaultBlockState().setValue(TypewriterBlock.FACING, Direction.NORTH));
+		helper.setBlock(pos.south(), Blocks.CHEST);
+		if (!(helper.getBlockEntity(pos, TypewriterBlockEntity.class) instanceof TypewriterBlockEntity typewriter)
+				|| !(helper.getBlockEntity(pos.south(), ChestBlockEntity.class) instanceof ChestBlockEntity output)) {
+			throw helper.assertionException(Component.literal("Typewriter or chest missing"));
+		}
+		typewriter.dyeSamples().setItem(TypewriterBlockEntity.SLOT_LETTER, new ItemStack(TypewriterBlockEntity.dyeItem(DyeColor.RED)));
+		typewriter.applySettings("A", 1, FontSettings.DEFAULT);
+		typewriter.start(List.of(), new LetterLibrary());
+		helper.assertTrue(typewriter.pencilChoices().isEmpty(), "A line is offered without stones in the output");
+		output.setItem(0, ModBlocks.TYPESTONE_ITEM.stack(Letters.classic('A'), Dyes.DEFAULT, 1));
+		helper.assertTrue(typewriter.pencilChoices().size() == 1, "The line isn't offered while its stone is in the output");
+		output.setItem(0, ItemStack.EMPTY);
+		helper.assertTrue(typewriter.pencilChoices().isEmpty(), "The line is still offered with an empty output");
+
+		typewriter.applySettings("   ", 1, FontSettings.DEFAULT);
+		typewriter.start(List.of(), new LetterLibrary());
+		output.setItem(0, ModBlocks.TYPESTONE_ITEM.stack(Letters.NONE, Dyes.DEFAULT, 1));
+		helper.assertTrue(typewriter.pencilChoices().isEmpty(), "A line of blanks is offered");
+		helper.succeed();
+	}
+
+	@GameTest
 	public void pencilForAPictureInTheOutput(GameTestHelper helper) {
 		BlockPos pos = new BlockPos(1, 1, 1);
 		helper.setBlock(pos, ModTypewriter.BLOCK.defaultBlockState().setValue(TypewriterBlock.FACING, Direction.NORTH));
