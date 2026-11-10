@@ -12,6 +12,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.text.BreakIterator;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -98,16 +99,21 @@ public final class LineBaker {
 	/**
 	 * The stones of the line, left to right as they are placed. The font is at the reference size; size
 	 * is the stone's pixels (16, 32 or 64), scale and baseline are percentages as in the screen. Trailing
-	 * spaces are dropped. Empty for an empty line.
+	 * spaces are dropped. Empty for an empty line. A line of nothing but spaces has no ink to measure,
+	 * so it gives one blank stone per space (at least width), as the spaced mode does.
 	 *
 	 * <p>The line is at least width stones wide (0: as wide as it is), and align (0 left, 1 center, 2 right)
 	 * says where it lies within them, down to the pixel. Empty stones in front are kept, empty ones
 	 * after the line are not.
 	 */
 	public static List<Cell> bakeLine(Font base, int size, int scale, int baseline, String text, int align, int width) {
+		if (text.isEmpty()) {
+			return List.of();
+		}
 		String line = text.stripTrailing();
 		if (line.isEmpty()) {
-			return List.of();
+			int blanks = Math.max(width, text.codePointCount(0, text.length()));
+			return Collections.nCopies(blanks, new Cell(null, ""));
 		}
 		double[] layout = layout(base, size, scale, baseline);
 		Font font = base.deriveFont((float) layout[0]);
