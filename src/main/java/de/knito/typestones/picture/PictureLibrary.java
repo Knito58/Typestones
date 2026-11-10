@@ -79,7 +79,7 @@ public class PictureLibrary extends SavedData {
 		if (pictures.containsKey(picture.hash())) {
 			return Added.KNOWN;
 		}
-		if (pictures.values().stream().filter(info -> !isIcon(info)).count() >= MAX_PICTURES) {
+		if (pictures.values().stream().filter(known -> !isIcon(known)).count() >= MAX_PICTURES) {
 			return Added.FULL;
 		}
 		Files.createDirectories(folder);
