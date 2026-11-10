@@ -89,33 +89,43 @@ public final class ItemIcons {
 		return scale(argb, width, height, size);
 	}
 
+	/**
+	 * Every target pixel is the average of exactly the part of the source it covers (fractions of
+	 * source pixels count by their share), weighted by alpha. A whole-number enlargement (16 to 48)
+	 * stays pixel for pixel; other ratios get soft edges instead of the uneven steps of picking
+	 * whole source pixels.
+	 */
 	static BufferedImage scale(int[] argb, int width, int height, int size) {
 		BufferedImage target = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
 		for (int y = 0; y < size; y++) {
-			int y0 = y * height / size;
-			int y1 = Math.max(y0 + 1, (y + 1) * height / size);
+			double top = (double) y * height / size;
+			double bottom = (double) (y + 1) * height / size;
 			for (int x = 0; x < size; x++) {
-				int x0 = x * width / size;
-				int x1 = Math.max(x0 + 1, (x + 1) * width / size);
-				long alpha = 0;
-				long red = 0;
-				long green = 0;
-				long blue = 0;
-				for (int sy = y0; sy < y1; sy++) {
-					for (int sx = x0; sx < x1; sx++) {
+				double left = (double) x * width / size;
+				double right = (double) (x + 1) * width / size;
+				double weight = 0;
+				double alpha = 0;
+				double red = 0;
+				double green = 0;
+				double blue = 0;
+				for (int sy = (int) Math.floor(top); sy < Math.min(height, (int) Math.ceil(bottom)); sy++) {
+					double wy = Math.min(bottom, sy + 1) - Math.max(top, sy);
+					for (int sx = (int) Math.floor(left); sx < Math.min(width, (int) Math.ceil(right)); sx++) {
+						double w = wy * (Math.min(right, sx + 1) - Math.max(left, sx));
 						int pixel = argb[sy * width + sx];
-						int a = pixel >>> 24;
+						double a = (pixel >>> 24) * w;
+						weight += w;
 						alpha += a;
-						red += (long) a * (pixel >> 16 & 0xFF);
-						green += (long) a * (pixel >> 8 & 0xFF);
-						blue += (long) a * (pixel & 0xFF);
+						red += a * (pixel >> 16 & 0xFF);
+						green += a * (pixel >> 8 & 0xFF);
+						blue += a * (pixel & 0xFF);
 					}
 				}
-				int count = (x1 - x0) * (y1 - y0);
-				if (alpha == 0) {
+				if (alpha <= 0 || weight <= 0) {
 					target.setRGB(x, y, 0);
 				} else {
-					target.setRGB(x, y, (int) (alpha / count) << 24 | (int) (red / alpha) << 16 | (int) (green / alpha) << 8 | (int) (blue / alpha));
+					target.setRGB(x, y, (int) Math.round(alpha / weight) << 24 | (int) Math.round(red / alpha) << 16
+							| (int) Math.round(green / alpha) << 8 | (int) Math.round(blue / alpha));
 				}
 			}
 		}
